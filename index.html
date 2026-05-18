@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Board Prototype</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
+
+        <!-- HEADER -->
+        <header class="bg-[#ff7b23] p-4 flex flex-wrap items-center justify-between gap-4">
+           <div class="flex items-center gap-3">
+    <img 
+        src="image1.png" 
+        alt="City Board Logo"
+        class="h-14 object-contain"
+    >
+</div>
+
+            <div class="flex items-center gap-4">
+                <button onclick="openCreateModal()"
+                    class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg">
+                    Create
+                </button>
+
+                <div class="w-12 h-12 rounded-full border-2 border-green-700 bg-gray-700 overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                        alt="Profile"
+                        class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+
+        <!-- FILTER BAR -->
+        <div class="bg-[#ff9e59] p-3 flex flex-wrap items-center justify-between gap-3 border-t border-orange-400">
+
+            <div class="flex flex-wrap gap-2">
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
+                    <i class="fa-solid fa-filter"></i> Filter (0)
+                </button>
+
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
+                    Commissions $
+                </button>
+
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
+                    <i class="fa-solid fa-location-dot"></i> Meet-up
+                </button>
+
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
+                    <i class="fa-solid fa-broom"></i> Volunteer
+                </button>
+            </div>
+
+            <button class="bg-[#ff7b23] text-white px-4 py-1.5 rounded-full border-2 border-white font-bold text-sm hover:bg-orange-600 transition">
+                How do I start?
+            </button>
+        </div>
+
+        <!-- POSTS -->
+        <main id="boardGrid"
+            class="p-6 bg-white grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] items-center justify-center">
+
+            <div id="emptyState" class="col-span-full text-center py-12">
+                <i class="fa-solid fa-clipboard-list text-gray-300 text-6xl mb-3"></i>
+
+                <p class="text-gray-500 text-lg font-medium">
+                    ยังไม่มีประกาศบนบอร์ดในขณะนี้
+                </p>
+
+                <p class="text-gray-400 text-sm mt-1">
+                    กดปุ่ม
+                    <span class="text-green-600 font-bold">Create</span>
+                    ด้านบนเพื่อสร้างกิจกรรมแรกของคุณได้เลย!
+                </p>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- CREATE MODAL -->
+    <div id="createModal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+        <div class="bg-white rounded-xl max-w-lg w-full p-6 relative shadow-2xl border-2 border-orange-400">
+
+            <button onclick="closeModal('createModal')"
+                class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold">
+                &times;
+            </button>
+
+            <h2 class="text-[#ff5100] text-2xl font-black mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-plus-circle"></i>
+                สร้างโพสต์ภารกิจใหม่
+            </h2>
+
+            <form id="createPostForm"
+                onsubmit="handleCreatePost(event)"
+                class="space-y-4">
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">
+                        หัวข้อกิจกรรม/งาน *
+                    </label>
+
+                    <input type="text"
+                        id="postTitle"
+                        required
+                        placeholder="เช่น พาเดินเล่นสวนสาธารณะ"
+                        class="w-full border rounded p-2 focus:outline-orange-400">
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">
+                        รายละเอียด *
+                    </label>
+
+                    <textarea id="postDesc"
+                        required
+                        rows="3"
+                        placeholder="รายละเอียดกิจกรรม"
+                        class="w-full border rounded p-2 focus:outline-orange-400"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">
+                            ประเภทกิจกรรม *
+                        </label>
+
+                        <select id="postType"
+                            onchange="toggleTypeFields()"
+                            class="w-full border rounded p-2 focus:outline-orange-400 bg-white">
+
+                            <option value="Cooperation">Cooperation</option>
+                            <option value="Commission">Commission</option>
+                            <option value="Volunteer">Volunteer</option>
+                            <option value="Meet-up">Meet-up</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">
+                            จำนวนคน *
+                        </label>
+
+                        <input type="number"
+                            id="postLimit"
+                            min="1"
+                            value="3"
+                            required
+                            class="w-full border rounded p-2 focus:outline-orange-400">
+                    </div>
+                </div>
+
+                <!-- Commission -->
+                <div id="commissionField" class="hidden">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">
+                        ค่าตอบแทน ($)
+                    </label>
+
+                    <input type="text"
+                        id="postBudget"
+                        placeholder="เช่น 500 บาท"
+                        class="w-full border rounded p-2 focus:outline-orange-400">
+                </div>
+
+                <!-- Location -->
+                <div id="locationField" class="hidden">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">
+                        สถานที่นัดพบ
+                    </label>
+
+                    <input type="text"
+                        id="postLocation"
+                        placeholder="เช่น คาเฟ่หน้าปากซอย"
+                        class="w-full border rounded p-2 focus:outline-orange-400">
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t">
+
+                    <button type="button"
+                        onclick="closeModal('createModal')"
+                        class="bg-gray-300 text-gray-700 px-5 py-2 rounded-full font-bold hover:bg-gray-400 transition">
+                        ยกเลิก
+                    </button>
+
+                    <button type="submit"
+                        class="bg-[#41cf43] text-white border border-green-700 px-6 py-2 rounded-full font-bold hover:bg-green-600 transition shadow">
+                        ประกาศลงบอร์ด
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- DETAILS MODAL -->
+    <div id="detailsModal"
+        class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative shadow-2xl border border-gray-300 max-h-[90vh] overflow-y-auto">
+
+            <button onclick="closeModal('detailsModal')"
+                class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl font-bold">
+                &times;
+            </button>
+
+            <div class="flex flex-col md:flex-row gap-6">
+
+                <div class="w-full md:w-2/5">
+                    <img id="modalImage"
+                        src=""
+                        class="w-full h-44 object-cover rounded-lg border"
+                        alt="">
+
+                    <div class="mt-4">
+                        <a href="#"
+                            class="inline-flex items-center justify-center w-10 h-10 bg-[#5865F2] text-white rounded-xl shadow">
+                            <i class="fa-brands fa-discord text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-3/5 flex flex-col justify-between">
+
+                    <div>
+                        <h2 id="modalTitle"
+                            class="text-[#ff5100] text-2xl font-black leading-tight"></h2>
+
+                        <div id="modalLocationContainer"
+                            class="mt-2 text-sm text-gray-600 hidden">
+
+                            <i class="fa-solid fa-location-dot text-orange-500"></i>
+
+                            สถานที่:
+                            <span id="modalLocationText"
+                                class="font-bold"></span>
+                        </div>
+
+                        <div id="modalDesc"
+                            class="text-orange-600 text-sm font-medium mt-3 space-y-1 h-36 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 mt-6 border-t pt-4">
+
+                        <span id="modalTypeBadge"
+                            class="bg-[#ff6200] text-white px-4 py-2 rounded-full text-sm font-bold flex items-center border border-orange-700"></span>
+
+                        <button onclick="openConfirmModal()"
+                            class="bg-[#41cf43] text-white px-6 py-2 rounded-full text-sm font-bold border border-green-700 shadow-md">
+
+                            สมัคร
+
+                            <span id="modalSlots"
+                                class="bg-emerald-700 text-white text-xs px-1.5 py-0.5 rounded-full ml-1"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONFIRM MODAL -->
+    <div id="confirmModal"
+        class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+
+        <div class="bg-white rounded-xl max-w-xl w-full p-6 relative shadow-2xl border-2 border-orange-400">
+
+            <h2 class="text-[#ff5100] text-2xl font-black text-center mb-4 border-b pb-2">
+                ยืนยันการสมัครเข้าร่วมงาน
+            </h2>
+
+            <div class="flex gap-4 items-start">
+
+                <img id="confirmImage"
+                    src=""
+                    class="w-1/3 h-24 object-cover rounded border"
+                    alt="">
+
+                <p id="confirmTitle"
+                    class="text-[#ff5100] text-lg font-bold flex-1"></p>
+            </div>
+
+            <div class="flex justify-center gap-4 mt-8">
+
+                <button onclick="closeModal('confirmModal')"
+                    class="bg-red-500 text-white font-bold px-6 py-2 rounded-full border border-red-700 shadow">
+                    ยกเลิก
+                </button>
+
+                <button onclick="submitApplication()"
+                    class="bg-[#41cf43] text-white font-bold px-8 py-2 rounded-full border border-green-700 shadow-md">
+                    ยืนยันการสมัคร
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="script.js"></script>
+
+</body>
+</html>
