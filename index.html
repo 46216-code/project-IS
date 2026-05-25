@@ -194,12 +194,21 @@
 
     <script>
         // FIXED DATABASE ROUTING VARIABLES
-        const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
+        const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabaseClient.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-        });
+       const { createClient } = supabase;
+
+        const supabaseClient = createClient(
+        SUPABASE_URL,
+     SUPABASE_ANON_KEY,
+        {
+            auth: {
+            persistSession: true,
+            autoRefreshToken: true
+         }
+        }
+    );
 
         let memoryPosts = [];
         let loggedInUser = null;
@@ -237,7 +246,7 @@
             signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
             signUpBtn.disabled = true;
 
-            const { data: authData, error: authError } = await supabase.auth.signUp({ 
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({ 
                 email, 
                 password,
                 options: {
@@ -256,16 +265,16 @@
             if (avatarFile && authData.user) {
                 const fileExt = avatarFile.name.split('.').pop();
                 const filePath = `avatars/${authData.user.id}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
+                const { error: uploadError } = await supabaseClient.storage.from('activity-images').upload(filePath, avatarFile);
                 
                 if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
+                    const { data: urlData } = supabaseClient.storage.from('activity-images').getPublicUrl(filePath);
                     avatarUrl = urlData.publicUrl;
                 }
             }
 
             if(authData.user) {
-                await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+                await supabaseClient.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
             }
             
             alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
@@ -283,7 +292,7 @@
             loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
             loginBtn.disabled = true;
 
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             
             loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
             loginBtn.disabled = false;
@@ -294,7 +303,7 @@
         }
 
         function trackAuthSession() {
-            supabase.auth.onAuthStateChange(async (event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (session && session.user) {
                     loggedInUser = session.user;
                     document.getElementById('authScreen').classList.add('hidden');
@@ -310,7 +319,7 @@
         }
 
         async function fetchPosts() {
-            const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
+            const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
             if (!error && data) {
                 memoryPosts = data;
                 const grid = document.getElementById('boardGrid');
@@ -324,7 +333,7 @@
 
         async function handleLogout() {
             if(confirm("ต้องการออกจากระบบหรือไม่?")) {
-                await supabase.auth.signOut();
+                await supabaseClient.auth.signOut();
                 window.location.reload();
             }
         }
