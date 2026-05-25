@@ -3,269 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>City Board Prototype</title>
-
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome -->
+    <title>City Board - Permanent Ecosystem</title>
+    
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { background-color: #e2fcd4; }
+    </style>
 </head>
-
 <body class="p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-xl overflow-hidden border border-gray-200">
-
-        <!-- HEADER -->
+        
         <header class="bg-[#ff7b23] p-4 flex flex-wrap items-center justify-between gap-4">
-           <div class="flex items-center gap-3">
-    <img 
-        src="image1.png" 
-        alt="City Board Logo"
-        class="h-14 object-contain"
-    >
-</div>
-
+            <div class="flex items-center gap-2">
+                <span class="bg-white text-[#ff7b23] font-bold p-1 px-2 rounded border border-black text-xl shadow-sm">CB</span>
+                <h1 class="text-white text-3xl font-extrabold tracking-wide">City Board</h1>
+            </div>
+            
             <div class="flex items-center gap-4">
-                <button onclick="openCreateModal()"
-                    class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg">
-                    Create
-                </button>
+                <div id="loginSection" class="flex flex-wrap items-center gap-2 bg-orange-600/30 p-2 rounded-lg border border-orange-400">
+                    <input type="email" id="authEmail" placeholder="อีเมลของคุณ..." class="bg-white border rounded px-3 py-1.5 text-sm focus:outline-none w-44">
+                    <input type="password" id="authPassword" placeholder="รหัสผ่าน..." class="bg-white border rounded px-3 py-1.5 text-sm focus:outline-none w-36">
+                    <button onclick="handleLogin()" class="bg-white text-orange-600 font-bold px-3 py-1.5 rounded text-sm hover:bg-gray-100 transition cursor-pointer">Login</button>
+                    <button onclick="handleSignUp()" class="bg-orange-500 text-white border border-white font-bold px-3 py-1.5 rounded text-sm hover:bg-orange-600 transition cursor-pointer">Sign Up</button>
+                </div>
 
-                <div class="w-12 h-12 rounded-full border-2 border-green-700 bg-gray-700 overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-                        alt="Profile"
-                        class="w-full h-full object-cover">
+                <div id="userSection" class="hidden flex items-center gap-4">
+                    <button onclick="openCreateModal()" class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg cursor-pointer">
+                        Create
+                    </button>
+                    <div class="flex flex-col items-end leading-tight text-white">
+                        <span class="text-xs font-bold text-orange-100">Logged in as:</span>
+                        <span id="userDisplayEmail" class="font-black text-sm"></span>
+                    </div>
+                    <button onclick="handleLogout()" class="text-white hover:underline font-bold text-sm cursor-pointer">Logout</button>
                 </div>
             </div>
         </header>
 
-        <!-- FILTER BAR -->
         <div class="bg-[#ff9e59] p-3 flex flex-wrap items-center justify-between gap-3 border-t border-orange-400">
-
             <div class="flex flex-wrap gap-2">
-                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
-                    <i class="fa-solid fa-filter"></i> Filter (0)
-                </button>
-
-                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
-                    Commissions $
-                </button>
-
-                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
-                    <i class="fa-solid fa-location-dot"></i> Meet-up
-                </button>
-
-                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">
-                    <i class="fa-solid fa-broom"></i> Volunteer
-                </button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm cursor-pointer"><i class="fa-solid fa-filter"></i> Filter (0)</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm cursor-pointer">Commissions $</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm cursor-pointer"><i class="fa-solid fa-location-dot"></i> Meet-up</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm cursor-pointer"><i class="fa-solid fa-broom"></i> Volunteer</button>
             </div>
-
-            <button class="bg-[#ff7b23] text-white px-4 py-1.5 rounded-full border-2 border-white font-bold text-sm hover:bg-orange-600 transition">
-                How do I start?
-            </button>
         </div>
 
-        <!-- POSTS -->
-        <main id="boardGrid"
-            class="p-6 bg-white grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] items-center justify-center">
-
+        <main id="boardGrid" class="p-6 bg-white grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[300px] items-center justify-center">
             <div id="emptyState" class="col-span-full text-center py-12">
                 <i class="fa-solid fa-clipboard-list text-gray-300 text-6xl mb-3"></i>
-
-                <p class="text-gray-500 text-lg font-medium">
-                    ยังไม่มีประกาศบนบอร์ดในขณะนี้
-                </p>
-
-                <p class="text-gray-400 text-sm mt-1">
-                    กดปุ่ม
-                    <span class="text-green-600 font-bold">Create</span>
-                    ด้านบนเพื่อสร้างกิจกรรมแรกของคุณได้เลย!
-                </p>
+                <p class="text-gray-500 text-lg font-medium">ยังไม่มีประกาศบนบอร์ดในขณะนี้</p>
+                <p id="createHint" class="text-gray-400 text-sm mt-1">กรุณาสร้างบัญชีด้านบนเพื่อสร้างประกาศแรกถาวรของคุณ!</p>
             </div>
-
         </main>
     </div>
 
-    <!-- CREATE MODAL -->
-    <div id="createModal"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-
+    <div id="createModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-lg w-full p-6 relative shadow-2xl border-2 border-orange-400">
-
-            <button onclick="closeModal('createModal')"
-                class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold">
-                &times;
-            </button>
-
-            <h2 class="text-[#ff5100] text-2xl font-black mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-plus-circle"></i>
-                สร้างโพสต์ภารกิจใหม่
-            </h2>
-
-            <form id="createPostForm"
-                onsubmit="handleCreatePost(event)"
-                class="space-y-4">
-
+            <button onclick="closeModal('createModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
+            <h2 class="text-[#ff5100] text-2xl font-black mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle"></i> สร้างโพสต์ภารกิจใหม่</h2>
+            
+            <form id="createPostForm" onsubmit="handleCreatePost(event)" class="space-y-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1">
-                        หัวข้อกิจกรรม/งาน *
-                    </label>
-
-                    <input type="text"
-                        id="postTitle"
-                        required
-                        placeholder="เช่น พาเดินเล่นสวนสาธารณะ"
-                        class="w-full border rounded p-2 focus:outline-orange-400">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">รูปภาพประกอบกิจกรรม</label>
+                    <input type="file" id="postImageFile" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100">
                 </div>
-
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1">
-                        รายละเอียด *
-                    </label>
-
-                    <textarea id="postDesc"
-                        required
-                        rows="3"
-                        placeholder="รายละเอียดกิจกรรม"
-                        class="w-full border rounded p-2 focus:outline-orange-400"></textarea>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">หัวข้อกิจกรรม/งาน *</label>
+                    <input type="text" id="postTitle" required placeholder="เช่น พาเดินเล่นสวนสาธารณะ" class="w-full border rounded p-2 focus:outline-orange-400">
                 </div>
-
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">รายละเอียดข้อความแจ้งเตือนหรือข้อตกลง *</label>
+                    <textarea id="postDesc" required rows="3" placeholder="ระบุรายละเอียดงาน..." class="w-full border rounded p-2 focus:outline-orange-400"></textarea>
+                </div>
                 <div class="grid grid-cols-2 gap-4">
-
                     <div>
-                        <label class="block text-gray-700 text-sm font-bold mb-1">
-                            ประเภทกิจกรรม *
-                        </label>
-
-                        <select id="postType"
-                            onchange="toggleTypeFields()"
-                            class="w-full border rounded p-2 focus:outline-orange-400 bg-white">
-
-                            <option value="Cooperation">Cooperation</option>
-                            <option value="Commission">Commission</option>
-                            <option value="Volunteer">Volunteer</option>
-                            <option value="Meet-up">Meet-up</option>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ประเภทกิจกรรม *</label>
+                        <select id="postType" onchange="toggleTypeFields()" class="w-full border rounded p-2 focus:outline-orange-400 bg-white">
+                            <option value="Cooperation">Cooperation (ร่วมมือทั่วไป)</option>
+                            <option value="Commission">Commission $ (มีค่าตอบแทน)</option>
+                            <option value="Volunteer">Volunteer (อาสาสมัคร)</option>
+                            <option value="Meet-up">Meet-up (นัดรวมตัว)</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-gray-700 text-sm font-bold mb-1">
-                            จำนวนคน *
-                        </label>
-
-                        <input type="number"
-                            id="postLimit"
-                            min="1"
-                            value="3"
-                            required
-                            class="w-full border rounded p-2 focus:outline-orange-400">
+                        <label class="block text-gray-700 text-sm font-bold mb-1">จำนวนคนที่ต้องการ *</label>
+                        <input type="number" id="postLimit" min="1" value="3" required class="w-full border rounded p-2 focus:outline-orange-400">
                     </div>
                 </div>
-
-                <!-- Commission -->
                 <div id="commissionField" class="hidden">
-                    <label class="block text-gray-700 text-sm font-bold mb-1">
-                        ค่าตอบแทน ($)
-                    </label>
-
-                    <input type="text"
-                        id="postBudget"
-                        placeholder="เช่น 500 บาท"
-                        class="w-full border rounded p-2 focus:outline-orange-400">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">จำนวนเงินค่าตอบแทน ($)</label>
+                    <input type="text" id="postBudget" placeholder="เช่น 500 บาท" class="w-full border rounded p-2 focus:outline-orange-400">
                 </div>
-
-                <!-- Location -->
                 <div id="locationField" class="hidden">
-                    <label class="block text-gray-700 text-sm font-bold mb-1">
-                        สถานที่นัดพบ
-                    </label>
-
-                    <input type="text"
-                        id="postLocation"
-                        placeholder="เช่น คาเฟ่หน้าปากซอย"
-                        class="w-full border rounded p-2 focus:outline-orange-400">
+                    <label class="block text-gray-700 text-sm font-bold mb-1">สถานที่นัดพบ *</label>
+                    <input type="text" id="postLocation" placeholder="เช่น สวนลุมพินี" class="w-full border rounded p-2 focus:outline-orange-400">
                 </div>
-
                 <div class="flex justify-end gap-3 pt-4 border-t">
-
-                    <button type="button"
-                        onclick="closeModal('createModal')"
-                        class="bg-gray-300 text-gray-700 px-5 py-2 rounded-full font-bold hover:bg-gray-400 transition">
-                        ยกเลิก
-                    </button>
-
-                    <button type="submit"
-                        class="bg-[#41cf43] text-white border border-green-700 px-6 py-2 rounded-full font-bold hover:bg-green-600 transition shadow">
-                        ประกาศลงบอร์ด
-                    </button>
+                    <button type="button" onclick="closeModal('createModal')" class="bg-gray-300 text-gray-700 px-5 py-2 rounded-full font-bold hover:bg-gray-400 transition cursor-pointer">ยกเลิก</button>
+                    <button type="submit" id="submitBtn" class="bg-[#41cf43] text-white border border-green-700 px-6 py-2 rounded-full font-bold hover:bg-green-600 transition shadow cursor-pointer">ประกาศลงบอร์ด</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- DETAILS MODAL -->
-    <div id="detailsModal"
-        class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-
+    <div id="detailsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative shadow-2xl border border-gray-300 max-h-[90vh] overflow-y-auto">
-
-            <button onclick="closeModal('detailsModal')"
-                class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl font-bold">
-                &times;
-            </button>
-
+            <button onclick="closeModal('detailsModal')" class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
             <div class="flex flex-col md:flex-row gap-6">
-
                 <div class="w-full md:w-2/5">
-                    <img id="modalImage"
-                        src=""
-                        class="w-full h-44 object-cover rounded-lg border"
-                        alt="">
-
-                    <div class="mt-4">
-                        <a href="#"
-                            class="inline-flex items-center justify-center w-10 h-10 bg-[#5865F2] text-white rounded-xl shadow">
-                            <i class="fa-brands fa-discord text-xl"></i>
-                        </a>
-                    </div>
+                    <img id="modalImage" src="" class="w-full h-44 object-cover rounded-lg border" alt="Job Detail">
                 </div>
-
                 <div class="w-full md:w-3/5 flex flex-col justify-between">
-
                     <div>
-                        <h2 id="modalTitle"
-                            class="text-[#ff5100] text-2xl font-black leading-tight"></h2>
-
-                        <div id="modalLocationContainer"
-                            class="mt-2 text-sm text-gray-600 hidden">
-
-                            <i class="fa-solid fa-location-dot text-orange-500"></i>
-
-                            สถานที่:
-                            <span id="modalLocationText"
-                                class="font-bold"></span>
+                        <h2 id="modalTitle" class="text-[#ff5100] text-2xl font-black leading-tight"></h2>
+                        <div id="modalLocationContainer" class="mt-2 text-sm text-gray-600 hidden">
+                            <i class="fa-solid fa-location-dot text-orange-500"></i> สถานที่: <span id="modalLocationText" class="font-bold"></span>
                         </div>
-
-                        <div id="modalDesc"
-                            class="text-orange-600 text-sm font-medium mt-3 space-y-1 h-36 overflow-y-auto pr-1"></div>
+                        <div id="modalDesc" class="text-orange-600 text-sm font-medium mt-3 space-y-1 h-36 overflow-y-auto pr-1"></div>
                     </div>
-
                     <div class="flex justify-end gap-3 mt-6 border-t pt-4">
-
-                        <span id="modalTypeBadge"
-                            class="bg-[#ff6200] text-white px-4 py-2 rounded-full text-sm font-bold flex items-center border border-orange-700"></span>
-
-                        <button onclick="openConfirmModal()"
-                            class="bg-[#41cf43] text-white px-6 py-2 rounded-full text-sm font-bold border border-green-700 shadow-md">
-
-                            สมัคร
-
-                            <span id="modalSlots"
-                                class="bg-emerald-700 text-white text-xs px-1.5 py-0.5 rounded-full ml-1"></span>
+                        <span id="modalTypeBadge" class="bg-[#ff6200] text-white px-4 py-2 rounded-full text-sm font-bold flex items-center border border-orange-700"></span>
+                        <button onclick="openConfirmModal()" class="bg-[#41cf43] text-white px-6 py-2 rounded-full text-sm font-bold border border-green-700 shadow-md cursor-pointer">
+                            สมัคร <span id="modalSlots" class="bg-emerald-700 text-white text-xs px-1.5 py-0.5 rounded-full ml-1"></span>
                         </button>
                     </div>
                 </div>
@@ -273,44 +138,265 @@
         </div>
     </div>
 
-    <!-- CONFIRM MODAL -->
-    <div id="confirmModal"
-        class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-
+    <div id="confirmModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-xl w-full p-6 relative shadow-2xl border-2 border-orange-400">
-
-            <h2 class="text-[#ff5100] text-2xl font-black text-center mb-4 border-b pb-2">
-                ยืนยันการสมัครเข้าร่วมงาน
-            </h2>
-
+            <h2 class="text-[#ff5100] text-2xl font-black text-center mb-4 border-b pb-2">ยืนยันการสมัครเข้าร่วมงาน</h2>
             <div class="flex gap-4 items-start">
-
-                <img id="confirmImage"
-                    src=""
-                    class="w-1/3 h-24 object-cover rounded border"
-                    alt="">
-
-                <p id="confirmTitle"
-                    class="text-[#ff5100] text-lg font-bold flex-1"></p>
+                <img id="confirmImage" src="" class="w-1/3 h-24 object-cover rounded border" alt="Job Detail">
+                <p id="confirmTitle" class="text-[#ff5100] text-lg font-bold flex-1"></p>
             </div>
-
             <div class="flex justify-center gap-4 mt-8">
-
-                <button onclick="closeModal('confirmModal')"
-                    class="bg-red-500 text-white font-bold px-6 py-2 rounded-full border border-red-700 shadow">
-                    ยกเลิก
-                </button>
-
-                <button onclick="submitApplication()"
-                    class="bg-[#41cf43] text-white font-bold px-8 py-2 rounded-full border border-green-700 shadow-md">
-                    ยืนยันการสมัคร
-                </button>
+                <button onclick="closeModal('confirmModal')" class="bg-red-500 text-white font-bold px-6 py-2 rounded-full border border-red-700 shadow cursor-pointer">ยกเลิก</button>
+                <button onclick="submitApplication()" class="bg-[#41cf43] text-white font-bold px-8 py-2 rounded-full border border-green-700 shadow-md cursor-pointer">ยืนยันการสมัคร</button>
             </div>
         </div>
     </div>
 
-    <!-- JS -->
-    <script src="script.js"></script>
+    <script>
+        const SUPABASE_URL = "https://yiuynlvcdoiwirairppy.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_SjHpo1Ch6aUpjELuUNsNIg_q56jwdgn";
 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let memoryPosts = [];
+        let selectedPostId = null;
+        let loggedInUser = null;
+
+        const defaultImages = {
+            Cooperation: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=400",
+            Commission: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=400",
+            Volunteer: "https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=400",
+            "Meet-up": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400"
+        };
+
+        // PRODUCTION EM&PW ACCOUNT SYSTEM PIPELINES
+        async function handleSignUp() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            if(!email || !password) return alert("กรุณากรอกข้อมูลอีเมลและรหัสผ่านให้ครบถ้วน!");
+
+            const { data, error } = await supabase.auth.signUp({ email, password });
+            if (error) alert("การสมัครสมาชิกล้มเหลว: " + error.message);
+            else alert("สร้างบัญชีสำเร็จแล้ว! ระบบกำลังเข้าสู่ระบบให้อัตโนมัติ");
+        }
+
+        async function handleLogin() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            if(!email || !password) return alert("กรุณากรอกอีเมลและรหัสผ่าน!");
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) alert("เข้าสู่ระบบไม่สำเร็จ: " + error.message);
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        function trackAuthSession() {
+            supabase.auth.onAuthStateChange((event, session) => {
+                if (session && session.user) {
+                    loggedInUser = session.user;
+                    document.getElementById('loginSection').classList.add('hidden');
+                    document.getElementById('userSection').classList.remove('hidden');
+                    document.getElementById('userDisplayEmail').innerText = loggedInUser.email;
+                    document.getElementById('createHint').innerHTML = `ยินดีต้อนรับ! คุณสามารถกดปุ่ม <span class="text-green-600 font-bold">Create</span> เพื่อกระจายข่าวสารภารกิจของคุณลงสู่บอร์ดส่วนกลางได้เลย`;
+                } else {
+                    loggedInUser = null;
+                    document.getElementById('loginSection').classList.remove('hidden');
+                    document.getElementById('userSection').classList.add('hidden');
+                }
+            });
+        }
+
+        function openCreateModal() {
+            if(!loggedInUser) return alert("กรุณาเข้าสู่ระบบก่อนจัดการบอร์ด");
+            document.getElementById('createPostForm').reset();
+            toggleTypeFields();
+            document.getElementById('createModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function toggleTypeFields() {
+            const type = document.getElementById('postType').value;
+            document.getElementById('commissionField').classList.toggle('hidden', type !== 'Commission');
+            document.getElementById('locationField').classList.toggle('hidden', type !== 'Meet-up');
+            if (type === 'Meet-up') {
+                document.getElementById('postLocation').setAttribute('required', 'true');
+            } else {
+                document.getElementById('postLocation').removeAttribute('required');
+            }
+        }
+
+        async function fetchPosts() {
+            const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
+            if (!error) {
+                memoryPosts = data;
+                renderPosts();
+            }
+        }
+
+        async function handleCreatePost(event) {
+            event.preventDefault();
+            if(!loggedInUser) return alert("ความปลอดภัยระบบ: กรุณาเข้าสู่ระบบก่อนสร้างประกาศ");
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerText = "กำลังอัปโหลดข้อมูลหลัก...";
+            submitBtn.disabled = true;
+
+            const type = document.getElementById('postType').value;
+            const imageFile = document.getElementById('postImageFile').files[0];
+            let uploadedImageUrl = defaultImages[type] || defaultImages.Cooperation;
+
+            if (imageFile) {
+                const fileExt = imageFile.name.split('.').pop();
+                const fileName = `${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                const { data: uploadData, error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, imageFile);
+
+                if (uploadError) {
+                    alert("คลาวด์อัปโหลดรูปภาพล้มเหลว: " + uploadError.message);
+                    submitBtn.innerText = "ประกาศลงบอร์ด";
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
+                uploadedImageUrl = urlData.publicUrl;
+            }
+
+            const newPostData = {
+                title: document.getElementById('postTitle').value,
+                description: document.getElementById('postDesc').value,
+                type: type,
+                limit_count: parseInt(document.getElementById('postLimit').value),
+                joined_count: 0,
+                budget: type === 'Commission' ? document.getElementById('postBudget').value : null,
+                location: type === 'Meet-up' ? document.getElementById('postLocation').value : null,
+                image_url: uploadedImageUrl,
+                user_id: loggedInUser.id,
+                author_email: loggedInUser.email
+            };
+
+            const { error } = await supabase.from('posts').insert([newPostData]);
+
+            submitBtn.innerText = "ประกาศลงบอร์ด";
+            submitBtn.disabled = false;
+
+            if (error) {
+                alert("บันทึกลงฐานข้อมูลล้มเหลว: " + error.message);
+            } else {
+                closeModal('createModal');
+                fetchPosts();
+            }
+        }
+
+        function renderPosts() {
+            const grid = document.getElementById('boardGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.querySelectorAll('.post-card').forEach(card => card.remove());
+
+            if(memoryPosts.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('items-center', 'justify-center');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            grid.classList.remove('items-center', 'justify-center');
+
+            memoryPosts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = "post-card border-2 border-gray-300 rounded-lg p-4 flex gap-4 bg-white shadow-sm hover:shadow-md transition";
+                
+                let badgeContent = post.type === 'Commission' ? `Commission $ ${post.budget ? `(${post.budget})` : ''}` : 
+                                  (post.type === 'Meet-up' ? `<i class="fa-solid fa-location-dot"></i> Meet-up` : 
+                                  (post.type === 'Volunteer' ? `<i class="fa-solid fa-broom"></i> Volunteer` : `<i class="fa-solid fa-users"></i> Cooperation`));
+
+                card.innerHTML = `
+                    <img src="${post.image_url}" class="w-1/3 h-32 object-cover rounded border border-gray-300" alt="Cover">
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-[#ff5100] text-xl font-bold line-clamp-1">${post.title}</h3>
+                            </div>
+                            <p class="text-[10px] text-gray-400 font-semibold mb-1">ผู้ประกาศ: ${post.author_email}</p>
+                            ${post.location ? `<p class="text-xs text-gray-500 font-bold mb-1"><i class="fa-solid fa-map-marker-alt text-orange-500"></i> ${post.location}</p>` : ''}
+                            <p class="text-red-500 text-xs line-clamp-2">${post.description}</p>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-2">
+                            <span class="bg-[#ff6200] text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 border border-orange-700">
+                                ${badgeContent}
+                            </span>
+                            <button onclick="viewPostDetails(${post.id})" class="bg-[#41cf43] text-white px-4 py-1 rounded-full text-xs font-bold border border-green-700 shadow-sm flex items-center gap-1 hover:bg-green-600 transition cursor-pointer">
+                                สมัคร <span class="bg-emerald-700 text-white text-[10px] px-1 rounded-full">${post.joined_count}/${post.limit_count}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function viewPostDetails(id) {
+            selectedPostId = id;
+            const post = memoryPosts.find(p => p.id === id);
+            if(!post) return;
+
+            document.getElementById('modalTitle').innerText = post.title;
+            document.getElementById('modalDesc').innerText = post.description;
+            document.getElementById('modalImage').src = post.image_url;
+            document.getElementById('modalSlots').innerText = `${post.joined_count}/${post.limit_count}`;
+            
+            const locContainer = document.getElementById('modalLocationContainer');
+            if(post.location) {
+                locContainer.classList.remove('hidden');
+                document.getElementById('modalLocationText').innerText = post.location;
+            } else {
+                locContainer.classList.add('hidden');
+            }
+
+            document.getElementById('modalTypeBadge').innerText = post.type === 'Commission' ? `Commission $` : post.type;
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function openConfirmModal() {
+            const post = memoryPosts.find(p => p.id === selectedPostId);
+            if(!post) return;
+            document.getElementById('confirmTitle').innerText = post.title;
+            document.getElementById('confirmImage').src = post.image_url;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        async function submitApplication() {
+            const post = memoryPosts.find(p => p.id === selectedPostId);
+            if(post) {
+                if(parseInt(post.joined_count) >= parseInt(post.limit_count)) {
+                    alert("ขออภัย! กิจกรรมนี้คนเข้าร่วมเต็มแล้ว");
+                } else {
+                    const { error } = await supabase
+                        .from('posts')
+                        .update({ joined_count: parseInt(post.joined_count) + 1 })
+                        .eq('id', post.id);
+
+                    if (error) alert("สมัครล้มเหลว: " + error.message);
+                    else alert("สมัครเข้าร่วมกิจกรรมสำเร็จแล้ว! ข้อมูลถูกบันทึกบนคลาวด์ฐานข้อมูลกลางเรียบร้อย");
+                }
+            }
+            closeModal('confirmModal');
+            closeModal('detailsModal');
+            fetchPosts();
+        }
+
+        window.onload = function() {
+            trackAuthSession();
+            fetchPosts();
+        };
+    </script>
 </body>
 </html>
