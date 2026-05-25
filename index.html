@@ -28,7 +28,7 @@
             <p id="authSubtitle" class="text-gray-500 text-sm mt-1">ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม</p>
         </div>
 
-        <div id="loginFormContainer">
+        <div id="loginFormContainer" style="display: block;">
             <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
                 <i class="fa-solid fa-right-to-bracket text-green-500"></i> เข้าสู่ระบบ (Log In)
             </h2>
@@ -60,11 +60,11 @@
             </form>
 
             <p class="text-center text-sm text-gray-600 mt-6">
-                ยังไม่มีบัญชีผู้ใช้ใช่ไหม? <button onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up) ที่นี่</button>
+                ยังไม่มีบัญชีผู้ใช้ใช่ไหม? <button type="button" onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up) ที่นี่</button>
             </p>
         </div>
 
-        <div id="signUpFormContainer" class="hidden">
+        <div id="signUpFormContainer" style="display: none;">
             <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
                 <i class="fa-solid fa-user-plus text-[#ff7b23]"></i> ลงทะเบียนสมัครสมาชิก (Sign Up)
             </h2>
@@ -96,7 +96,7 @@
             </form>
 
             <p class="text-center text-sm text-gray-600 mt-6">
-                มีบัญชีสมาชิกร่วมทางอยู่แล้ว? <button onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">กลับไปหน้าเข้าสู่ระบบ (Log In)</button>
+                มีบัญชีสมาชิกร่วมทางอยู่แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">กลับไปหน้าเข้าสู่ระบบ (Log In)</button>
             </p>
         </div>
     </div>
@@ -193,9 +193,8 @@
     </div>
 
     <script>
-        // UPDATED PROJECT ADDRESS LINE
-        const SUPABASE_URL = "https://yiuynlvcdoiwirairppy.supabase.co";
-        // UPDATED MATCHING PROJECT KEY VALUE
+        // FIXED DATABASE ROUTING VARIABLES
+        const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -207,18 +206,19 @@
 
         const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
+        // CLEAN SWITCHING INTERFACES FIXED HERE
         function toggleAuthMode(mode) {
             const loginForm = document.getElementById('loginFormContainer');
             const signUpForm = document.getElementById('signUpFormContainer');
             const subTitle = document.getElementById('authSubtitle');
 
             if(mode === 'signup') {
-                loginForm.classList.add('hidden');
-                signUpForm.classList.remove('hidden');
+                loginForm.style.display = 'none';
+                signUpForm.style.display = 'block';
                 subTitle.innerText = "ลงทะเบียนข้อมูลบัญชีของคุณ เพื่อเริ่มใช้งานระบบบอร์ดเมือง";
             } else {
-                signUpForm.classList.add('hidden');
-                loginForm.classList.remove('hidden');
+                signUpForm.style.display = 'none';
+                loginForm.style.display = 'block';
                 subTitle.innerText = "ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม";
             }
         }
@@ -237,7 +237,6 @@
             signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
             signUpBtn.disabled = true;
 
-            // Updated parameters with explicit redirect back to your live Vercel app URL link!
             const { data: authData, error: authError } = await supabase.auth.signUp({ 
                 email, 
                 password,
@@ -269,7 +268,7 @@
                 await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
             }
             
-            alert("สมัครสมาชิกสำเร็จ! กรุณาลองกรอกข้อมูลเพื่อล็อกอินเข้าสู่ระบบได้ทันที");
+            alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
             signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
             signUpBtn.disabled = false;
             toggleAuthMode('login');
