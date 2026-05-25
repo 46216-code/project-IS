@@ -193,8 +193,10 @@
     </div>
 
     <script>
+        // UPDATED PROJECT ADDRESS LINE
         const SUPABASE_URL = "https://yiuynlvcdoiwirairppy.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_SjHpo1Ch6aUpjELuUNsNIg_q56jwdgn";
+        // UPDATED MATCHING PROJECT KEY VALUE
+        const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: { persistSession: true, autoRefreshToken: true }
@@ -235,7 +237,14 @@
             signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
             signUpBtn.disabled = true;
 
-            const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+            // Updated parameters with explicit redirect back to your live Vercel app URL link!
+            const { data: authData, error: authError } = await supabase.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    redirectTo: "https://project-is-mocha.vercel.app/"
+                }
+            });
             
             if (authError) {
                 alert("เกิดปัญหาในการลงทะเบียนสมัครสมาชิก: " + authError.message);
