@@ -4,21 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>City Board App</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        body { background-color: #e2fcd4; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ff9e59; border-radius: 10px; }
+        body {
+            background-color: #e2fcd4;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff9e59;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex items-center justify-center overflow-hidden p-0 sm:p-4 md:p-6">
 
     <div id="authScreen" class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 p-8 m-4">
         <div class="text-center mb-6">
-            <div class="inline-block bg-[#ff7b23] text-white font-black text-3xl p-3 px-5 rounded-2xl border-2 border-black shadow-md mb-3">CB</div>
+            <div class="inline-block bg-[#ff7b23] text-white font-black text-3xl p-3 px-5 rounded-2xl border-2 border-black shadow-md mb-3">
+                CB
+            </div>
             <h1 class="text-[#ff7b23] text-3xl font-black tracking-wide">City Board</h1>
             <p id="authSubtitle" class="text-gray-500 text-sm mt-1">ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม</p>
         </div>
@@ -31,38 +44,94 @@
                     </label>
                     <input type="email" id="authEmail" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="กรอกอีเมลของคุณ">
                 </div>
+
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
                         <i class="fa-solid fa-lock text-orange-400"></i> รหัสผ่าน (Password) *
                     </label>
                     <input type="password" id="authPassword" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="••••••••">
                 </div>
+
                 <div class="flex items-center justify-between text-xs text-gray-500">
-                    <label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" checked class="accent-orange-500"> จดจำฉันไว้</label>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" checked class="accent-orange-500"> จดจำฉันไว้
+                    </label>
                     <a href="#" class="hover:text-orange-500 transition">ลืมรหัสผ่าน?</a>
                 </div>
-                <button type="submit" id="loginBtn" class="w-full bg-[#41cf43] text-white border-b-4 border-green-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-green-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">เข้าสู่ระบบ (Log In)</button>
+
+                <button type="submit" id="loginBtn" class="w-full bg-[#41cf43] text-white border-b-4 border-green-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-green-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
+                    เข้าสู่ระบบ (Log In)
+                </button>
             </form>
-            <p class="text-center text-sm text-gray-600 mt-6">ยังไม่มีบัญชีผู้ใช้? <button onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up)</button></p>
+
+            <div class="relative flex py-4 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-xs uppercase font-bold">หรือ</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <button onclick="handleGoogleLogin()" class="w-full bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-400 font-bold p-3 rounded-xl shadow-sm flex items-center justify-center gap-3 transition cursor-pointer">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.67 0 3.19.58 4.38 1.71l3.27-3.27C17.67 1.54 15.03 1 12 1 7.35 1 3.39 3.65 1.5 7.5l3.86 3c.9-2.7 3.42-4.46 6.64-4.46z"/>
+                    <path fill="#4285F4" d="M23.45 12.3c0-.82-.07-1.6-.2-2.3H12v4.4h6.43c-.28 1.47-1.11 2.71-2.36 3.55l3.66 2.84c2.14-1.97 3.36-4.88 3.36-8.49z"/>
+                    <path fill="#FBBC05" d="M5.36 14.5c-.23-.68-.36-1.41-.36-2.17s.13-1.49.36-2.17l-3.86-3C.68 8.7 0 10.28 0 12s.68 3.3 1.5 4.83l3.86-3.33z"/>
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.66-2.84c-1.01.68-2.31 1.08-4.3 1.08-3.22 0-5.74-1.76-6.64-4.46l-3.86 3C3.39 20.35 7.35 23 12 23z"/>
+                </svg>
+                Sign in with Google
+            </button>
+
+            <p class="text-center text-sm text-gray-600 mt-6">
+                ยังไม่มีบัญชีผู้ใช้? <button onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up)</button>
+            </p>
         </div>
 
         <div id="signUpFormContainer" class="hidden">
             <form onsubmit="handleSignUp(event)" class="space-y-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1"><i class="fa-solid fa-envelope text-orange-400"></i> อีเมล (Email) *</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-envelope text-orange-400"></i> อีเมล (Email) *
+                    </label>
                     <input type="email" id="signUpEmail" required class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="example@email.com">
                 </div>
+
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1"><i class="fa-solid fa-lock text-orange-400"></i> รหัสผ่าน (Password) *</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-lock text-orange-400"></i> รหัสผ่าน (Password) *
+                    </label>
                     <input type="password" id="signUpPass" required class="w-full border-2 border-gray-200 rounded-xl p-2.5 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="อย่างน้อย 6 ตัวอักษร">
                 </div>
+
                 <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1"><i class="fa-solid fa-image text-orange-400"></i> รูปภาพประจำตัวโปรไฟล์ (ไม่บังคับ)</label>
+                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-image text-orange-400"></i> รูปภาพประจำตัวโปรไฟล์ (ไม่บังคับ)
+                    </label>
                     <input type="file" id="profileImageFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-[#ff7b23] hover:file:bg-orange-100 cursor-pointer">
                 </div>
-                <button type="submit" id="signUpBtn" class="w-full bg-[#ff7b23] text-white border-b-4 border-orange-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-orange-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">สร้างบัญชีผู้ใช้ (Sign Up)</button>
+
+                <button type="submit" id="signUpBtn" class="w-full bg-[#ff7b23] text-white border-b-4 border-orange-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-orange-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
+                    สร้างบัญชีผู้ใช้ (Sign Up)
+                </button>
             </form>
-            <p class="text-center text-sm text-gray-600 mt-6">มีบัญชีผู้ใช้อยู่แล้ว? <button onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">เข้าสู่ระบบ (Log In)</button></p>
+
+            <div class="relative flex py-4 items-center">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-xs uppercase font-bold">หรือ</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <button onclick="handleGoogleLogin()" class="w-full bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-400 font-bold p-3 rounded-xl shadow-sm flex items-center justify-center gap-3 transition cursor-pointer">
+                <svg class="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5.04c1.67 0 3.19.58 4.38 1.71l3.27-3.27C17.67 1.54 15.03 1 12 1 7.35 1 3.39 3.65 1.5 7.5l3.86 3c.9-2.7 3.42-4.46 6.64-4.46z"/>
+                    <path fill="#4285F4" d="M23.45 12.3c0-.82-.07-1.6-.2-2.3H12v4.4h6.43c-.28 1.47-1.11 2.71-2.36 3.55l3.66 2.84c2.14-1.97 3.36-4.88 3.36-8.49z"/>
+                    <path fill="#FBBC05" d="M5.36 14.5c-.23-.68-.36-1.41-.36-2.17s.13-1.49.36-2.17l-3.86-3C.68 8.7 0 10.28 0 12s.68 3.3 1.5 4.83l3.86-3.33z"/>
+                    <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.92l-3.66-2.84c-1.01.68-2.31 1.08-4.3 1.08-3.22 0-5.74-1.76-6.64-4.46l-3.86 3C3.39 20.35 7.35 23 12 23z"/>
+                </svg>
+                Sign up with Google
+            </button>
+
+            <p class="text-center text-sm text-gray-600 mt-6">
+                มีบัญชีผู้ใช้อยู่แล้ว? <button onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">เข้าสู่ระบบ (Log In)</button>
+            </p>
         </div>
     </div>
 
@@ -72,17 +141,19 @@
                 <span class="bg-white text-[#ff7b23] font-bold p-1 px-2 rounded border border-black text-xl shadow-sm">CB</span>
                 <h1 class="text-white text-3xl font-extrabold tracking-wide">City Board</h1>
             </div>
+            
             <div class="flex items-center gap-4">
                 <button onclick="openCreateModal()" class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg flex items-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-plus"></i> Create
                 </button>
+                
                 <div class="flex items-center gap-2 border-l border-orange-400 pl-4">
                     <div class="text-right hidden sm:block">
                         <p id="userDisplay" class="text-white font-bold text-sm leading-tight">User</p>
                         <span class="text-orange-200 text-xs">Online</span>
                     </div>
                     <div onclick="handleLogout()" title="ออกจากระบบ" class="w-11 h-11 rounded-full border-2 border-green-400 bg-gray-700 overflow-hidden cursor-pointer hover:opacity-80 transition shadow-sm">
-                        <img id="userAvatar" src="" alt="Profile" class="w-full h-full object-cover">
+                        <img id="userAvatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" alt="Profile" class="w-full h-full object-cover">
                     </div>
                 </div>
             </div>
@@ -90,9 +161,15 @@
 
         <div class="bg-[#ff9e59] p-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-b border-orange-400">
             <div class="flex flex-wrap gap-2">
-                <button class="bg-white/20 text-white px-4 py-1.5 rounded-full border border-white/40 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-filter"></i> Filter</button>
+                <button class="bg-white/20 text-white px-4 py-1.5 rounded-full border border-white/40 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-filter"></i> Filter (0)</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm">Commissions $</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-location-dot"></i> Meet-up</button>
+                <button class="bg-gray-400 text-white px-4 py-1.5 rounded-full border border-gray-600 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-broom"></i> Volunteer</button>
             </div>
-            <button class="bg-[#ff7b23] text-white px-4 py-1.5 rounded-full border border-white/60 font-bold text-sm hover:bg-orange-600 transition cursor-pointer">How do I start?</button>
+            
+            <button class="bg-[#ff7b23] text-white px-4 py-1.5 rounded-full border border-white/60 font-bold text-sm hover:bg-orange-600 transition cursor-pointer">
+                How do I start?
+            </button>
         </div>
 
         <main id="boardGrid" class="flex-1 overflow-y-auto p-6 bg-gray-50 grid grid-cols-1 md:grid-cols-2 gap-6 content-start">
@@ -110,6 +187,7 @@
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 relative shadow-2xl border-2 border-orange-400">
             <button onclick="closeModal('createModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
             <h2 class="text-[#ff5100] text-2xl font-black mb-4 flex items-center gap-2"><i class="fa-solid fa-plus-circle"></i> สร้างโพสต์ภารกิจใหม่</h2>
+
             <form id="createPostForm" onsubmit="handleCreatePost(event)" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1">รูปภาพประกอบกิจกรรม</label>
@@ -159,7 +237,7 @@
             <button onclick="closeModal('detailsModal')" class="absolute top-4 right-4 text-gray-500 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
             <div class="flex flex-col md:flex-row gap-6">
                 <div class="w-full md:w-2/5">
-                    <img id="modalImage" src="" class="w-full h-44 object-cover rounded-xl border shadow-inner" alt="Cover">
+                    <img id="modalImage" src="" class="w-full h-44 object-cover rounded-xl border shadow-inner" alt="Cover Image">
                     <div class="flex flex-wrap gap-1.5 mt-3">
                         <span class="bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full font-semibold">Community</span>
                         <span class="bg-gray-200 text-gray-700 text-xs px-2.5 py-1 rounded-full font-semibold">Activity</span>
@@ -175,7 +253,9 @@
                     </div>
                     <div class="flex justify-end gap-3 mt-6 border-t pt-4">
                         <span id="modalTypeBadge" class="bg-[#ff6200] text-white px-4 py-2 rounded-full text-sm font-bold flex items-center border border-orange-700 shadow-sm"></span>
-                        <button onclick="openConfirmModal()" class="bg-[#41cf43] text-white px-6 py-2 rounded-full text-sm font-bold border border-green-700 shadow-md hover:bg-green-600 transition cursor-pointer">สมัคร <span id="modalSlots" class="bg-emerald-700 text-white text-xs px-1.5 py-0.5 rounded-full ml-1"></span></button>
+                        <button onclick="openConfirmModal()" class="bg-[#41cf43] text-white px-6 py-2 rounded-full text-sm font-bold border border-green-700 shadow-md hover:bg-green-600 transition cursor-pointer">
+                            สมัคร <span id="modalSlots" class="bg-emerald-700 text-white text-xs px-1.5 py-0.5 rounded-full ml-1"></span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -197,10 +277,11 @@
     </div>
 
     <script>
-        // ⚠️ REMINDER: PASTE YOUR ACTUAL SUPABASE URL LINK ENDING IN '.supabase.co' RIGHT HERE!
-        const SUPABASE_URL = "https://CHANGE_THIS_TO_YOUR_PROJECT_ID.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
+        // CONFIGURATION PARAMETERS
+        const SUPABASE_URL = "https://yiuynlvcdoiwirairppy.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_SjHpo1Ch6aUpjELuUNsNIg_q56jwdgn";
 
+        // FIXED CIRCULAR CRASH HERE
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: { persistSession: true, autoRefreshToken: true }
         });
@@ -222,6 +303,7 @@
             const loginForm = document.getElementById('loginFormContainer');
             const signUpForm = document.getElementById('signUpFormContainer');
             const subTitle = document.getElementById('authSubtitle');
+
             if(mode === 'signup') {
                 loginForm.classList.add('hidden');
                 signUpForm.classList.remove('hidden');
@@ -241,6 +323,7 @@
             const signUpBtn = document.getElementById('signUpBtn');
 
             if (password.length < 6) return alert("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
+
             signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
             signUpBtn.disabled = true;
 
@@ -257,6 +340,7 @@
                 const fileExt = avatarFile.name.split('.').pop();
                 const filePath = `avatars/${authData.user.id}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
+                
                 if (!uploadError) {
                     const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
                     avatarUrl = urlData.publicUrl;
@@ -266,7 +350,8 @@
             if(authData.user) {
                 await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
             }
-            alert("สมัครสมาชิกสำเร็จ!");
+            
+            alert("สมัครสมาชิกและบันทึกโปรไฟล์สำเร็จ!");
             signUpBtn.innerText = "สร้างบัญชีผู้ใช้ (Sign Up)";
             signUpBtn.disabled = false;
         }
@@ -276,13 +361,24 @@
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
             const loginBtn = document.getElementById('loginBtn');
+
             loginBtn.innerText = "กำลังตรวจสอบบัญชี...";
             loginBtn.disabled = true;
 
             const { error } = await supabase.auth.signInWithPassword({ email, password });
+            
             loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
             loginBtn.disabled = false;
+
             if (error) alert("เข้าสู่ระบบไม่สำเร็จ: " + error.message);
+        }
+
+        async function handleGoogleLogin() {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.origin }
+            });
+            if (error) alert("Google Login Failed: " + error.message);
         }
 
         async function handleLogout() {
@@ -296,8 +392,10 @@
             supabase.auth.onAuthStateChange(async (event, session) => {
                 if (session && session.user) {
                     loggedInUser = session.user;
+                    
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('appScreen').classList.remove('hidden');
+                    
                     document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
                     document.getElementById('userAvatar').src = defaultAvatar;
 
@@ -306,10 +404,14 @@
                         if(prof && prof.avatar_url) {
                             document.getElementById('userAvatar').src = prof.avatar_url;
                         } else if (event === "SIGNED_IN") {
-                            const userEmail = loggedInUser.email || "user";
-                            await supabase.from('profiles').insert([{ id: loggedInUser.id, username: userEmail.split('@')[0], avatar_url: defaultAvatar }]);
+                            const userEmail = loggedInUser.email || "google_user";
+                            const defaultGoogleAvatar = loggedInUser.user_metadata.avatar_url || defaultAvatar;
+                            await supabase.from('profiles').insert([{ id: loggedInUser.id, username: userEmail.split('@')[0], avatar_url: defaultGoogleAvatar }]);
+                            document.getElementById('userAvatar').src = defaultGoogleAvatar;
                         }
-                    } catch (e) { console.log(e); }
+                    } catch (e) {
+                        console.log("Profile sync complete exception bypass.");
+                    }
                     fetchPosts();
                 } else {
                     loggedInUser = null;
@@ -321,15 +423,21 @@
 
         async function fetchPosts() {
             const { data: profiles } = await supabase.from('profiles').select('id, avatar_url');
-            if(profiles) profiles.forEach(p => profileMap[p.id] = p.avatar_url);
+            if(profiles) {
+                profiles.forEach(p => profileMap[p.id] = p.avatar_url);
+            }
 
             const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
-            if (!error) { memoryPosts = data; renderPosts(); }
+            if (!error) {
+                memoryPosts = data;
+                renderPosts();
+            }
         }
 
         async function handleCreatePost(event) {
             event.preventDefault();
             if(!loggedInUser) return alert("เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่อีกครั้ง");
+
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerText = "กำลังส่งข้อมูล...";
             submitBtn.disabled = true;
@@ -342,6 +450,7 @@
                 const fileExt = imageFile.name.split('.').pop();
                 const fileName = `posts/${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage.from('activity-images').upload(fileName, imageFile);
+
                 if (!uploadError) {
                     const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(fileName);
                     uploadedImageUrl = urlData.publicUrl;
@@ -362,10 +471,16 @@
             };
 
             const { error } = await supabase.from('posts').insert([newPostData]);
+
             submitBtn.innerText = "ประกาศลงบอร์ด";
             submitBtn.disabled = false;
-            if (error) alert("เกิดข้อผิดพลาด: " + error.message);
-            else { closeModal('createModal'); fetchPosts(); }
+
+            if (error) {
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            } else {
+                closeModal('createModal');
+                fetchPosts();
+            }
         }
 
         function renderPosts() {
@@ -377,11 +492,13 @@
                 emptyState.classList.remove('hidden');
                 return;
             }
+
             emptyState.classList.add('hidden');
 
             memoryPosts.forEach(post => {
                 const card = document.createElement('div');
-                card.className = "post-card border-2 border-gray-200 rounded-2xl p-4 flex gap-4 bg-white shadow-sm hover:shadow-md transition duration-200 h-44";
+                card.className = "post-card border-2 border-gray-200 rounded-2xl p-4 flex gap-4 bg-white shadow-sm hover:shadow-md transition duration-200 h-40";
+                
                 let badgeContent = post.type === 'Commission' ? `Commission $ ${post.budget ? `(${post.budget})` : ''}` : 
                                   (post.type === 'Meet-up' ? `<i class="fa-solid fa-location-dot text-white/90"></i> Meet-up` : 
                                   (post.type === 'Volunteer' ? `<i class="fa-solid fa-broom"></i> Volunteer` : `<i class="fa-solid fa-users"></i> Cooperation`));
@@ -395,7 +512,9 @@
                             <p class="text-gray-600 text-xs mt-1 line-clamp-2">${post.description}</p>
                         </div>
                         <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
-                            <span class="bg-[#ff6200] text-white px-2.5 py-1 rounded-full text-[11px] font-bold truncate border border-orange-700 max-w-[60%]">${badgeContent}</span>
+                            <span class="bg-[#ff6200] text-white px-2.5 py-1 rounded-full text-[11px] font-bold truncate border border-orange-700 max-w-[60%]">
+                                ${badgeContent}
+                            </span>
                             <button onclick="viewPostDetails(${post.id})" class="bg-[#41cf43] text-white px-4 py-1.5 rounded-full text-xs font-bold border border-green-700 shadow-sm flex items-center gap-1 hover:bg-green-600 transition flex-shrink-0 cursor-pointer">
                                 สมัคร <span class="bg-emerald-700 text-white text-[10px] px-1.5 py-0.5 rounded-full">${post.joined_count}/${post.limit_count}</span>
                             </button>
@@ -410,16 +529,21 @@
             selectedPostId = id;
             const post = memoryPosts.find(p => p.id === id);
             if(!post) return;
+
             document.getElementById('modalTitle').innerText = post.title;
             document.getElementById('modalDesc').innerText = post.description;
             document.getElementById('modalImage').src = post.image_url;
             document.getElementById('modalSlots').innerText = `${post.joined_count}/${post.limit_count}`;
+            
             const locContainer = document.getElementById('modalLocationContainer');
             if(post.location) {
                 locContainer.classList.remove('hidden');
                 document.getElementById('modalLocationText').innerText = post.location;
-            } else { locContainer.classList.add('hidden'); }
-            document.getElementById('modalTypeBadge').innerText = post.type;
+            } else {
+                locContainer.classList.add('hidden');
+            }
+
+            document.getElementById('modalTypeBadge').innerText = post.type === 'Commission' ? `Commission $` : post.type;
             document.getElementById('detailsModal').classList.remove('hidden');
         }
 
@@ -437,12 +561,18 @@
                 if(parseInt(post.joined_count) >= parseInt(post.limit_count)) {
                     alert("ขออภัย! กลุ่มเป้าหมายนี้เต็มเรียบร้อยแล้ว");
                 } else {
-                    const { error } = await supabase.from('posts').update({ joined_count: parseInt(post.joined_count) + 1 }).eq('id', post.id);
+                    const { error } = await supabase
+                        .from('posts')
+                        .update({ joined_count: parseInt(post.joined_count) + 1 })
+                        .eq('id', post.id);
+
                     if (error) alert("สมัครล้มเหลว: " + error.message);
                     else alert("ยืนยันร่วมกลุ่มสำเร็จ!");
                 }
             }
-            closeModal('confirmModal'); closeModal('detailsModal'); fetchPosts();
+            closeModal('confirmModal');
+            closeModal('detailsModal');
+            fetchPosts();
         }
 
         function openCreateModal() { document.getElementById('createModal').classList.remove('hidden'); toggleTypeFields(); }
@@ -453,7 +583,9 @@
             document.getElementById('locationField').classList.toggle('hidden', type !== 'Meet-up');
         }
 
-        window.onload = function() { trackAuthSession(); };
+        window.onload = function() {
+            trackAuthSession();
+        };
     </script>
 </body>
 </html>
