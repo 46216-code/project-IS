@@ -195,9 +195,18 @@
     const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true }
-    });
+            const { createClient } = window.supabase;
+
+            const supabase = createClient(
+            SUPABASE_URL,
+            SUPABASE_ANON_KEY,
+            {
+            auth: {
+            persistSession: true,
+            autoRefreshToken: true
+            }
+            }
+            );
 
     let memoryPosts = [];
     let loggedInUser = null;
@@ -250,7 +259,22 @@
         if (avatarFile && authData.user) {
             const fileExt = avatarFile.name.split('.').pop();
             const filePath = `avatars/${authData.user.id}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
+            const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile, { upsert: true });
+
+                if (avatarFile) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+        if (!allowedTypes.includes(avatarFile.type)) {
+            alert("อนุญาตเฉพาะไฟล์รูปภาพ JPG PNG WEBP");
+            return;
+        }
+
+        if (avatarFile.size > 5 * 1024 * 1024) {
+            alert("ไฟล์รูปภาพต้องมีขนาดไม่เกิน 5MB");
+            return;
+        }
+
+        }
             
             if (!uploadError) {
                 const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
@@ -258,8 +282,20 @@
             }
         }
 
-        if(authData.user) {
-            await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+                if (authData.user) {
+        const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([{
+        id: authData.user.id,
+        username: email.split('@')[0],
+        avatar_url: avatarUrl
+        }]);
+
+        if (profileError) {
+            console.error(profileError);
+            alert("สร้างบัญชีสำเร็จ แต่บันทึกโปรไฟล์ไม่สำเร็จ");
+        }
+
         }
         
         alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
@@ -307,8 +343,9 @@
 
                 // 🛠️ แก้ไขการตรวจสอบเงื่อนไขเพื่อไม่ให้สร้าง Realtime Subscription ซ้ำซ้อน
                 if (!postsSubscription) {
-                    postsSubscription = supabase
-                        .channel('posts-channel')
+                                        if (postsSubscription) {
+                    await supabase.removeChannel(postsSubscription);
+                    postsSubscription = null;
                         .on(
                             'postgres_changes',
                             {
@@ -329,6 +366,7 @@
             }
         });
     }
+    
 
     async function fetchPosts() {
         const { data, error } = await supabase
@@ -343,6 +381,7 @@
             const emptyState = document.getElementById('emptyState');
             
             grid.querySelectorAll('.post-card').forEach(card => card.remove());
+            if (!grid) return;
             
             if(memoryPosts.length === 0) { 
                 emptyState.classList.remove('hidden'); 
@@ -382,12 +421,48 @@
                             </div>
                         </div>
                     `;
+
                     grid.appendChild(card);
                 });
             }
         }
     }
+            function escapeHTML(str) {
+        return str
+        ?.replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, """)
+        .replace(/'/g, "'");
+        ${escapeHTML(post.title)}
+        ${escapeHTML(post.description)}
 
+                async function updatePostCounter() {
+        if (!loggedInUser) return;
+
+        const { count } = await supabase
+            .from('posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', loggedInUser.id)
+            .eq('status', 'active');
+
+        const btn = document.querySelector('[onclick="openCreateModal()"]');
+
+        if (btn) {
+            btn.innerHTML = `
+                <i class="fa-solid fa-plus"></i>
+                Create (${count || 0}/3)
+            `;
+        }
+
+        }
+
+                if (error) {
+        console.error(error);
+        alert("โหลดโพสต์ไม่สำเร็จ");
+        return;
+}
+}
     async function handleCreatePost(event) {
         event.preventDefault();
 
@@ -510,7 +585,19 @@
         fetchPosts();
     }
 
-    window.onload = function() { trackAuthSession(); };
+        window.onload = async function () {
+    trackAuthSession();
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user) {
+        loggedInUser = session.user;
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('appScreen').classList.remove('hidden');
+        fetchPosts();
+    }
+
+    };
 </script>
 </body>
 </html> 
