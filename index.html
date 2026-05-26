@@ -101,6 +101,7 @@
         </div>
     </div>
 
+    <!--หน้าหลักเว็บ-->
     <div id="appScreen" class="hidden w-full max-w-6xl h-full max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
         <header class="bg-[#ff7b23] p-4 flex flex-shrink-0 items-center justify-between gap-4 border-b-2 border-orange-600">
             <div class="flex items-center gap-2">
@@ -110,7 +111,7 @@
             
             <div class="flex items-center gap-4">
                 <button onclick="openCreateModal()" class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg flex items-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-plus"></i> Create
+                    <i class="fa-solid fa-plus"></i> Create (0/3)
                 </button>
                 
                 <div class="flex items-center gap-2 border-l border-orange-400 pl-4">
@@ -125,6 +126,7 @@
             </div>
         </header>
 
+        <!-- ประกาศยังไม่มีโพสต์ -->
         <div class="bg-[#ff9e59] p-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-b border-orange-400">
             <div class="flex flex-wrap gap-2">
                 <button class="bg-white/20 text-white px-4 py-1.5 rounded-full border border-white/40 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-filter"></i> Filter</button>
@@ -143,6 +145,7 @@
         </main>
     </div>
 
+    <!--สร้างโพสต์ภารกิจใหม่-->
     <div id="createModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 relative shadow-2xl border-2 border-orange-400">
             <button onclick="closeModal('createModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
