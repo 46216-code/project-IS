@@ -198,11 +198,6 @@
     const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
-<<<<<<< HEAD
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { persistSession: true, autoRefreshToken: true }
-    });
-=======
        const { createClient } = supabase;
 
         const supabaseClient = createClient(
@@ -215,7 +210,6 @@
          }
         }
     );
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
 
     let memoryPosts = [];
     let loggedInUser = null;
@@ -254,12 +248,6 @@
         signUpBtn.innerText = "กำลังสร้างบัญชีผู้ใช้...";
         signUpBtn.disabled = true;
 
-<<<<<<< HEAD
-        const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-        
-        if (authError) {
-            alert("เกิดปัญหาในการลงทะเบียนสมัครสมาชิก: " + authError.message);
-=======
             if (password.length < 6) {
                 return alert("รหัสผ่านสั้นเกินไป! กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร");
             }
@@ -299,20 +287,11 @@
             }
             
             alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
             signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
             signUpBtn.disabled = false;
             return;
         }
 
-<<<<<<< HEAD
-        let avatarUrl = defaultAvatar;
-        
-        if (avatarFile && authData.user) {
-            const fileExt = avatarFile.name.split('.').pop();
-            const filePath = `avatars/${authData.user.id}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
-=======
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('authEmail').value.trim();
@@ -323,7 +302,6 @@
             loginBtn.disabled = true;
 
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
             
             if (!uploadError) {
                 const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
@@ -331,10 +309,6 @@
             }
         }
 
-<<<<<<< HEAD
-        if(authData.user) {
-            await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
-=======
         function trackAuthSession() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (session && session.user) {
@@ -349,7 +323,6 @@
                     document.getElementById('appScreen').classList.add('hidden');
                 }
             });
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
         }
         
         alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
@@ -361,34 +334,6 @@
         toggleAuthMode('login');
     }
 
-<<<<<<< HEAD
-    async function handleLogin(event) {
-        event.preventDefault();
-        const email = document.getElementById('authEmail').value.trim();
-        const password = document.getElementById('authPassword').value.trim();
-        const loginBtn = document.getElementById('loginBtn');
-
-        loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
-        loginBtn.disabled = true;
-
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        
-        loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
-        loginBtn.disabled = false;
-
-        if (error) {
-            alert("ล็อกอินไม่สำเร็จ: " + error.message);
-        }
-    }
-
-    function trackAuthSession() {
-        supabase.auth.onAuthStateChange(async (event, session) => {
-            if (session && session.user) {
-                loggedInUser = session.user;
-                document.getElementById('authScreen').classList.add('hidden');
-                document.getElementById('appScreen').classList.remove('hidden');
-                document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
-=======
         async function fetchPosts() {
             const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
             if (!error && data) {
@@ -396,7 +341,6 @@
                 const grid = document.getElementById('boardGrid');
                 const emptyState = document.getElementById('emptyState');
                 grid.querySelectorAll('.post-card').forEach(card => card.remove());
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
                 
                 const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', loggedInUser.id).single();
                 if(profile && profile.avatar_url) {
@@ -541,35 +485,11 @@
             }
         }
 
-<<<<<<< HEAD
-        const { error } = await supabase
-            .from('posts')
-            .insert([{
-                user_id: loggedInUser.id,
-                author_email: loggedInUser.email,
-                title: title,
-                description: description,
-                type: type,
-                people_limit: limit,
-                budget: type === 'Commission' ? budget : null,
-                location: type === 'Meet-up' ? location : null,
-                image_url: imageUrl,
-                status: 'active'
-            }]);
-
-        submitBtn.innerText = "ประกาศลงบอร์ด";
-        submitBtn.disabled = false;
-
-        if (error) {
-            alert("ไม่สามารถสร้างโพสต์ได้สำเร็จ: " + error.message);
-            return;
-=======
         async function handleLogout() {
             if(confirm("ต้องการออกจากระบบหรือไม่?")) {
                 await supabaseClient.auth.signOut();
                 window.location.reload();
             }
->>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
         }
 
         alert("สร้างโพสต์ภารกิจใหม่เรียบร้อยแล้ว!");
