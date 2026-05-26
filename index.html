@@ -67,7 +67,7 @@
             <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
                 <i class="fa-solid fa-user-plus text-[#ff7b23]"></i> ลงทะเบียนสมัครสมาชิก (Sign Up)
             </h2>
-            <form id="signUpForm" onsubmit="handleSignUp(event)" class="space-y-4">
+            <form onsubmit="handleSignUp(event)" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
                         <i class="fa-solid fa-envelope text-orange-400"></i> ระบุที่อยู่อีเมลของคุณ (Email) *
@@ -192,7 +192,6 @@
     </div>
 
     <script>
-        // Supabase Configuration
         const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
@@ -206,7 +205,6 @@
         const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
         const defaultPostImage = "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
 
-        // สลับหน้าจอ Login / Sign Up
         function toggleAuthMode(mode) {
             const loginForm = document.getElementById('loginFormContainer');
             const signUpForm = document.getElementById('signUpFormContainer');
@@ -223,13 +221,16 @@
             }
         }
 
-        // ฟังก์ชันระบบลงทะเบียน (Sign Up) ครบถ้วนสมบูรณ์
         async function handleSignUp(event) {
             event.preventDefault();
             const email = document.getElementById('signUpEmail').value.trim();
             const password = document.getElementById('signUpPass').value.trim();
             const avatarFile = document.getElementById('profileImageFile').files[0];
             const signUpBtn = document.getElementById('signUpBtn');
+
+            if (password.length < 6) {
+                return alert("รหัสผ่านสั้นเกินไป! กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร");
+            }
 
             signUpBtn.innerText = "กำลังสร้างบัญชีผู้ใช้...";
             signUpBtn.disabled = true;
@@ -258,7 +259,7 @@
                 }
             }
 
-            // 3. บันทึกข้อมูลลงในตาราง Profiles
+            // 3. บันทึกข้อมูลลงในตาราง Profiles ร่วมกับ USER UUID
             if(authData.user) {
                 await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
             }
@@ -266,13 +267,10 @@
             alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
             signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
             signUpBtn.disabled = false;
-            
-            // ล้างข้อมูลฟอร์มสมัครสมาชิก (แก้ไขแล้ว)
-            document.getElementById('signUpForm').reset();
+            document.getElementById('createPostForm').reset();
             toggleAuthMode('login');
         }
 
-        // ฟังก์ชันเข้าสู่ระบบ (Log In)
         async function handleLogin(event) {
             event.preventDefault();
             const email = document.getElementById('authEmail').value.trim();
@@ -292,7 +290,6 @@
             }
         }
 
-        // ตรวจสอบและติดตามสถานะการล็อกอินของผู้ใช้
         function trackAuthSession() {
             supabase.auth.onAuthStateChange(async (event, session) => {
                 if (session && session.user) {
@@ -301,7 +298,7 @@
                     document.getElementById('appScreen').classList.remove('hidden');
                     document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
                     
-                    // ดึงข้อมูลรูปโปรไฟล์
+                    // ดึงโปรไฟล์รูปภาพมาอัปเดตบนหัวเว็บขวาบน
                     const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', loggedInUser.id).single();
                     if(profile && profile.avatar_url) {
                         document.getElementById('userAvatar').src = profile.avatar_url;
@@ -316,9 +313,8 @@
             });
         }
 
-        // ดึงรายการโพสต์จากฐานข้อมูลมาแสดงผลบนบอร์ด
         async function fetchPosts() {
-            const { data, error } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+            const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
             if (!error && data) {
                 memoryPosts = data;
                 const grid = document.getElementById('boardGrid');
@@ -365,29 +361,9 @@
             }
         }
 
-        // ฟังก์ชันสร้างโพสต์ใหม่ (Create Post)
         async function handleCreatePost(event) {
             event.preventDefault();
-
-            if(!loggedInUser)
-                return alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
-
-            // ตรวจสอบจำนวนโพสต์ที่ Active อยู่ (จำกัดไม่เกิน 3 โพสต์)
-            const { count, error: countError } = await supabase
-                .from('posts')
-                .select('*', { count: 'exact', head: true })
-                .eq('user_id', loggedInUser.id)
-                .eq('status', 'active');
-
-            if (countError) {
-                alert("ไม่สามารถตรวจสอบจำนวนโพสต์ได้: " + countError.message);
-                return;
-            }
-
-            if (count >= 3) {
-                alert("คุณมีโพสต์ Active ครบ 3 โพสต์แล้ว ไม่สามารถสร้างเพิ่มได้");
-                return;
-            }
+            if(!loggedInUser) return alert("เซสชันล็อกอินของคุณหมดอายุ กรุณาใหม่อีกครั้ง");
 
             const title = document.getElementById('postTitle').value.trim();
             const description = document.getElementById('postDesc').value.trim();
@@ -403,30 +379,19 @@
 
             let imageUrl = null;
 
-            // ระบบจัดการไฟล์อัปโหลดรูปภาพพร้อมตัวแจ้งเตือนข้อผิดพลาดเชิงลึก (ตามข้อ 2)
             if(imageFile) {
                 const fileExt = imageFile.name.split('.').pop();
                 const uniqueFileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
                 const filePath = `posts/${uniqueFileName}`;
                 
-                const { error: uploadError } = await supabase.storage
-                    .from('activity-images')
-                    .upload(filePath, imageFile);
-
-                if(uploadError) {
-                    console.error("Storage Error Details:", uploadError);
-                    alert("เกิดปัญหาเกี่ยวกับระบบอัปโหลดรูปภาพ:\n" + uploadError.message);
-                    // สามารถลบหรือใส่ return; ตรงนี้ได้ถ้าต้องการให้ยกเลิกโพสต์เมื่ออัปโหลดรูปพัง
-                } else {
-                    const { data: urlData } = supabase.storage
-                        .from('activity-images')
-                        .getPublicUrl(filePath);
-
+                const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, imageFile);
+                if(!uploadError) {
+                    const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
                     imageUrl = urlData.publicUrl;
                 }
             }
 
-            // บันทึกกิจกรรมลงตาราง posts
+            // บันทึกกิจกรรมลงตาราง posts และระบุข้อมูล USER UUID + author_email ไปยัง Supabase
             const { error } = await supabase.from('posts').insert([{
                 user_id: loggedInUser.id,
                 author_email: loggedInUser.email,
@@ -436,27 +401,22 @@
                 people_limit: limit,
                 budget: type === 'Commission' ? budget : null,
                 location: type === 'Meet-up' ? location : null,
-                image_url: imageUrl,
-                status: 'active'
+                image_url: imageUrl
             }]);
 
             submitBtn.innerText = "ประกาศลงบอร์ด";
             submitBtn.disabled = false;
 
             if(error) {
-                console.error("Database Insert Error Details:", error);
-                alert("Create Post Failed\n\n" + error.message);
-                return;
+                alert("ไม่สามารถสร้างโพสต์ได้สำเร็จ: " + error.message);
             } else {
                 alert("สร้างโพสต์ภารกิจใหม่เรียบร้อยแล้ว!");
-                // เคลียร์ฟอร์มสร้างโพสต์ให้ถูกต้อง (แก้ไขแล้ว)
                 document.getElementById('createPostForm').reset();
                 closeModal('createModal');
                 fetchPosts();
             }
         }
 
-        // ฟังก์ชันออกจากระบบ
         async function handleLogout() {
             if(confirm("ต้องการออกจากระบบหรือไม่?")) {
                 await supabase.auth.signOut();
@@ -464,11 +424,9 @@
             }
         }
 
-        // สั่งเปิด-ปิด Modal Popup
         function openCreateModal() { document.getElementById('createModal').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         
-        // ซ่อน-แสดงฟิลด์เสริมตามประเภทกิจกรรมที่เลือก
         function toggleTypeFields() {
             const type = document.getElementById('postType').value;
             document.getElementById('commissionField').classList.toggle('hidden', type !== 'Commission');
@@ -477,8 +435,5 @@
 
         window.onload = function() { trackAuthSession(); };
     </script>
-
-
-
 </body>
 </html>
