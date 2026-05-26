@@ -100,6 +100,7 @@
         </div>
     </div>
 
+    <!--หน้าหลักเว็บ-->
     <div id="appScreen" class="hidden w-full max-w-6xl h-full max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
         <header class="bg-[#ff7b23] p-4 flex flex-shrink-0 items-center justify-between gap-4 border-b-2 border-orange-600">
             <div class="flex items-center gap-2">
@@ -109,7 +110,7 @@
             
             <div class="flex items-center gap-4">
                 <button onclick="openCreateModal()" class="bg-[#41cf43] text-white border-2 border-green-700 font-bold px-6 py-2 rounded-full hover:bg-green-600 transition shadow-md text-lg flex items-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-plus"></i> Create
+                    <i class="fa-solid fa-plus"></i> Create (0/3)
                 </button>
                 
                 <div class="flex items-center gap-2 border-l border-orange-400 pl-4">
@@ -124,6 +125,7 @@
             </div>
         </header>
 
+        <!-- ประกาศยังไม่มีโพสต์ -->
         <div class="bg-[#ff9e59] p-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-3 border-b border-orange-400">
             <div class="flex flex-wrap gap-2">
                 <button class="bg-white/20 text-white px-4 py-1.5 rounded-full border border-white/40 font-semibold flex items-center gap-1 text-sm"><i class="fa-solid fa-filter"></i> Filter</button>
@@ -142,6 +144,7 @@
         </main>
     </div>
 
+    <!--สร้างโพสต์ภารกิจใหม่-->
     <div id="createModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 relative shadow-2xl border-2 border-orange-400">
             <button onclick="closeModal('createModal')" class="absolute top-4 right-4 text-gray-400 hover:text-black text-2xl font-bold cursor-pointer">&times;</button>
@@ -195,9 +198,24 @@
     const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
+<<<<<<< HEAD
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: { persistSession: true, autoRefreshToken: true }
     });
+=======
+       const { createClient } = supabase;
+
+        const supabaseClient = createClient(
+        SUPABASE_URL,
+     SUPABASE_ANON_KEY,
+        {
+            auth: {
+            persistSession: true,
+            autoRefreshToken: true
+         }
+        }
+    );
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
 
     let memoryPosts = [];
     let loggedInUser = null;
@@ -236,21 +254,76 @@
         signUpBtn.innerText = "กำลังสร้างบัญชีผู้ใช้...";
         signUpBtn.disabled = true;
 
+<<<<<<< HEAD
         const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
         
         if (authError) {
             alert("เกิดปัญหาในการลงทะเบียนสมัครสมาชิก: " + authError.message);
+=======
+            if (password.length < 6) {
+                return alert("รหัสผ่านสั้นเกินไป! กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร");
+            }
+
+            signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
+            signUpBtn.disabled = true;
+
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    redirectTo: "https://project-is-mocha.vercel.app/"
+                }
+            });
+            
+            if (authError) {
+                alert("เกิดปัญหาในการลงทะเบียนสมัครสมาชิก: " + authError.message);
+                signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
+                signUpBtn.disabled = false;
+                return;
+            }
+
+            let avatarUrl = defaultAvatar;
+            if (avatarFile && authData.user) {
+                const fileExt = avatarFile.name.split('.').pop();
+                const filePath = `avatars/${authData.user.id}.${fileExt}`;
+                const { error: uploadError } = await supabaseClient.storage.from('activity-images').upload(filePath, avatarFile);
+                
+                if (!uploadError) {
+                    const { data: urlData } = supabaseClient.storage.from('activity-images').getPublicUrl(filePath);
+                    avatarUrl = urlData.publicUrl;
+                }
+            }
+
+            if(authData.user) {
+                await supabaseClient.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+            }
+            
+            alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
             signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
             signUpBtn.disabled = false;
             return;
         }
 
+<<<<<<< HEAD
         let avatarUrl = defaultAvatar;
         
         if (avatarFile && authData.user) {
             const fileExt = avatarFile.name.split('.').pop();
             const filePath = `avatars/${authData.user.id}.${fileExt}`;
             const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
+=======
+        async function handleLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
+            loginBtn.disabled = true;
+
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
             
             if (!uploadError) {
                 const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
@@ -258,8 +331,25 @@
             }
         }
 
+<<<<<<< HEAD
         if(authData.user) {
             await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+=======
+        function trackAuthSession() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (session && session.user) {
+                    loggedInUser = session.user;
+                    document.getElementById('authScreen').classList.add('hidden');
+                    document.getElementById('appScreen').classList.remove('hidden');
+                    document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
+                    fetchPosts();
+                } else {
+                    loggedInUser = null;
+                    document.getElementById('authScreen').classList.remove('hidden');
+                    document.getElementById('appScreen').classList.add('hidden');
+                }
+            });
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
         }
         
         alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
@@ -271,6 +361,7 @@
         toggleAuthMode('login');
     }
 
+<<<<<<< HEAD
     async function handleLogin(event) {
         event.preventDefault();
         const email = document.getElementById('authEmail').value.trim();
@@ -297,6 +388,15 @@
                 document.getElementById('authScreen').classList.add('hidden');
                 document.getElementById('appScreen').classList.remove('hidden');
                 document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
+=======
+        async function fetchPosts() {
+            const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
+            if (!error && data) {
+                memoryPosts = data;
+                const grid = document.getElementById('boardGrid');
+                const emptyState = document.getElementById('emptyState');
+                grid.querySelectorAll('.post-card').forEach(card => card.remove());
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
                 
                 const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', loggedInUser.id).single();
                 if(profile && profile.avatar_url) {
@@ -441,6 +541,7 @@
             }
         }
 
+<<<<<<< HEAD
         const { error } = await supabase
             .from('posts')
             .insert([{
@@ -462,6 +563,13 @@
         if (error) {
             alert("ไม่สามารถสร้างโพสต์ได้สำเร็จ: " + error.message);
             return;
+=======
+        async function handleLogout() {
+            if(confirm("ต้องการออกจากระบบหรือไม่?")) {
+                await supabaseClient.auth.signOut();
+                window.location.reload();
+            }
+>>>>>>> de1268388e1132896a4c61d3d3f3478f0f4c772e
         }
 
         alert("สร้างโพสต์ภารกิจใหม่เรียบร้อยแล้ว!");
