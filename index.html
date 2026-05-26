@@ -1,3 +1,4 @@
+@ -1,352 +1,352 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -19,6 +20,7 @@
 <body class="h-screen w-screen flex items-center justify-center overflow-hidden p-0 sm:p-4 md:p-6">
 
     <div id="authScreen" class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 p-8 m-4">
+        
         <div class="text-center mb-6">
             <div class="inline-block bg-[#ff7b23] text-white font-black text-3xl p-3 px-5 rounded-2xl border-2 border-black shadow-md mb-3">
                 CB
@@ -192,19 +194,30 @@
     </div>
 
     <script>
+        // FIXED DATABASE ROUTING VARIABLES
+        const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
         const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: { persistSession: true, autoRefreshToken: true }
-        });
+       const { createClient } = supabase;
+
+        const supabaseClient = createClient(
+        SUPABASE_URL,
+     SUPABASE_ANON_KEY,
+        {
+            auth: {
+            persistSession: true,
+            autoRefreshToken: true
+         }
+        }
+    );
 
         let memoryPosts = [];
         let loggedInUser = null;
 
         const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
-        const defaultPostImage = "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
 
+        // CLEAN SWITCHING INTERFACES FIXED HERE
         function toggleAuthMode(mode) {
             const loginForm = document.getElementById('loginFormContainer');
             const signUpForm = document.getElementById('signUpFormContainer');
@@ -232,11 +245,16 @@
                 return alert("รหัสผ่านสั้นเกินไป! กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร");
             }
 
-            signUpBtn.innerText = "กำลังสร้างบัญชีผู้ใช้...";
+            signUpBtn.innerText = "กำลังสร้างสิทธิ์เข้าถึง...";
             signUpBtn.disabled = true;
 
-            // 1. ลงทะเบียนผ่านระบบ Auth ของ Supabase
-            const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({ 
+                email, 
+                password,
+                options: {
+                    redirectTo: "https://project-is-mocha.vercel.app/"
+                }
+            });
             
             if (authError) {
                 alert("เกิดปัญหาในการลงทะเบียนสมัครสมาชิก: " + authError.message);
@@ -246,28 +264,24 @@
             }
 
             let avatarUrl = defaultAvatar;
-            
-            // 2. อัปโหลดรูปโปรไฟล์เข้า Storage หากมีการเลือกไฟล์
             if (avatarFile && authData.user) {
                 const fileExt = avatarFile.name.split('.').pop();
                 const filePath = `avatars/${authData.user.id}.${fileExt}`;
-                const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, avatarFile);
+                const { error: uploadError } = await supabaseClient.storage.from('activity-images').upload(filePath, avatarFile);
                 
                 if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
+                    const { data: urlData } = supabaseClient.storage.from('activity-images').getPublicUrl(filePath);
                     avatarUrl = urlData.publicUrl;
                 }
             }
 
-            // 3. บันทึกข้อมูลลงในตาราง Profiles ร่วมกับ USER UUID
             if(authData.user) {
-                await supabase.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+                await supabaseClient.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
             }
             
             alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
             signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
             signUpBtn.disabled = false;
-            document.getElementById('createPostForm').reset();
             toggleAuthMode('login');
         }
 
@@ -280,30 +294,23 @@
             loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
             loginBtn.disabled = true;
 
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
             
             loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
             loginBtn.disabled = false;
 
             if (error) {
-                alert("ล็อกอินไม่สำเร็จ: " + error.message);
+                alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบว่ากรอกข้อมูลถูกต้อง หรือปิดการยืนยันทางอีเมลในคอนโซลของ Supabase แล้ว)");
             }
         }
 
         function trackAuthSession() {
-            supabase.auth.onAuthStateChange(async (event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (session && session.user) {
                     loggedInUser = session.user;
                     document.getElementById('authScreen').classList.add('hidden');
                     document.getElementById('appScreen').classList.remove('hidden');
                     document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
-                    
-                    // ดึงโปรไฟล์รูปภาพมาอัปเดตบนหัวเว็บขวาบน
-                    const { data: profile } = await supabase.from('profiles').select('avatar_url').eq('id', loggedInUser.id).single();
-                    if(profile && profile.avatar_url) {
-                        document.getElementById('userAvatar').src = profile.avatar_url;
-                    }
-                    
                     fetchPosts();
                 } else {
                     loggedInUser = null;
@@ -314,119 +321,27 @@
         }
 
         async function fetchPosts() {
-            const { data, error } = await supabase.from('posts').select('*').order('id', { ascending: false });
+            const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
             if (!error && data) {
                 memoryPosts = data;
                 const grid = document.getElementById('boardGrid');
                 const emptyState = document.getElementById('emptyState');
-                
                 grid.querySelectorAll('.post-card').forEach(card => card.remove());
                 
-                if(memoryPosts.length === 0) { 
-                    emptyState.classList.remove('hidden'); 
-                } else { 
-                    emptyState.classList.add('hidden'); 
-                    
-                    memoryPosts.forEach(post => {
-                        const card = document.createElement('div');
-                        card.className = "post-card bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden flex flex-col transition hover:shadow-lg";
-                        
-                        let badgeColor = "bg-blue-500";
-                        if (post.type === "Commission") badgeColor = "bg-red-500";
-                        if (post.type === "Volunteer") badgeColor = "bg-emerald-500";
-                        if (post.type === "Meet-up") badgeColor = "bg-purple-500";
-
-                        card.innerHTML = `
-                            <div class="h-44 bg-gray-200 relative overflow-hidden">
-                                <img src="${post.image_url || defaultPostImage}" class="w-full h-full object-cover">
-                                <span class="absolute top-3 left-3 ${badgeColor} text-white font-bold text-xs px-3 py-1 rounded-full shadow-sm">${post.type}</span>
-                            </div>
-                            <div class="p-4 flex-1 flex flex-col justify-between">
-                                <div>
-                                    <h3 class="font-extrabold text-gray-800 text-lg mb-1 line-clamp-1">${post.title}</h3>
-                                    <p class="text-gray-500 text-sm mb-3 line-clamp-2">${post.description}</p>
-                                    
-                                    ${post.budget ? `<p class="text-red-600 font-bold text-sm mb-1"><i class="fa-solid fa-hand-holding-dollar"></i> ค่าตอบแทน: ${post.budget}</p>` : ''}
-                                    ${post.location ? `<p class="text-purple-600 font-bold text-sm mb-1"><i class="fa-solid fa-map-location-dot"></i> สถานที่: ${post.location}</p>` : ''}
-                                </div>
-                                <div class="flex items-center justify-between pt-3 border-t mt-3 text-xs text-gray-400">
-                                    <span><i class="fa-solid fa-users"></i> ต้องการ: ${post.people_limit} คน</span>
-                                    <span class="text-gray-500 font-medium">${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุผู้โพสต์'}</span>
-                                </div>
-                            </div>
-                        `;
-                        grid.appendChild(card);
-                    });
-                }
-            }
-        }
-
-        async function handleCreatePost(event) {
-            event.preventDefault();
-            if(!loggedInUser) return alert("เซสชันล็อกอินของคุณหมดอายุ กรุณาใหม่อีกครั้ง");
-
-            const title = document.getElementById('postTitle').value.trim();
-            const description = document.getElementById('postDesc').value.trim();
-            const type = document.getElementById('postType').value;
-            const limit = parseInt(document.getElementById('postLimit').value) || 3;
-            const budget = document.getElementById('postBudget').value.trim();
-            const location = document.getElementById('postLocation').value.trim();
-            const imageFile = document.getElementById('postImageFile').files[0];
-            const submitBtn = document.getElementById('submitBtn');
-
-            submitBtn.innerText = "กำลังส่งข้อมูลประกาศ...";
-            submitBtn.disabled = true;
-
-            let imageUrl = null;
-
-            if(imageFile) {
-                const fileExt = imageFile.name.split('.').pop();
-                const uniqueFileName = `${Date.now()}_${Math.floor(Math.random() * 1000)}.${fileExt}`;
-                const filePath = `posts/${uniqueFileName}`;
-                
-                const { error: uploadError } = await supabase.storage.from('activity-images').upload(filePath, imageFile);
-                if(!uploadError) {
-                    const { data: urlData } = supabase.storage.from('activity-images').getPublicUrl(filePath);
-                    imageUrl = urlData.publicUrl;
-                }
-            }
-
-            // บันทึกกิจกรรมลงตาราง posts และระบุข้อมูล USER UUID + author_email ไปยัง Supabase
-            const { error } = await supabase.from('posts').insert([{
-                user_id: loggedInUser.id,
-                author_email: loggedInUser.email,
-                title: title,
-                description: description,
-                type: type,
-                people_limit: limit,
-                budget: type === 'Commission' ? budget : null,
-                location: type === 'Meet-up' ? location : null,
-                image_url: imageUrl
-            }]);
-
-            submitBtn.innerText = "ประกาศลงบอร์ด";
-            submitBtn.disabled = false;
-
-            if(error) {
-                alert("ไม่สามารถสร้างโพสต์ได้สำเร็จ: " + error.message);
-            } else {
-                alert("สร้างโพสต์ภารกิจใหม่เรียบร้อยแล้ว!");
-                document.getElementById('createPostForm').reset();
-                closeModal('createModal');
-                fetchPosts();
+                if(memoryPosts.length === 0) { emptyState.classList.remove('hidden'); } 
+                else { emptyState.classList.add('hidden'); }
             }
         }
 
         async function handleLogout() {
             if(confirm("ต้องการออกจากระบบหรือไม่?")) {
-                await supabase.auth.signOut();
+                await supabaseClient.auth.signOut();
                 window.location.reload();
             }
         }
 
         function openCreateModal() { document.getElementById('createModal').classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        
         function toggleTypeFields() {
             const type = document.getElementById('postType').value;
             document.getElementById('commissionField').classList.toggle('hidden', type !== 'Commission');
