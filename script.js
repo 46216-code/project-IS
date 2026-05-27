@@ -98,111 +98,238 @@ async function handleSignUp(event) {
 }
 
 // ฟังก์ชันเข้าสู่ระบบ (Log In)
-async function handleCreatePost(event) {
+async function handleLogin(event) {
     event.preventDefault();
+    const email = document.getElementById('authEmail').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+    const loginBtn = document.getElementById('loginBtn');
 
-    const submitBtn = document.getElementById('submitBtn');
+    loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
+    loginBtn.disabled = true;
 
-    try {
-        // ✅ 1. Check login properly
-        const { data: { user } } = await supabaseClient.auth.getUser();
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    
+    loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
+    loginBtn.disabled = false;
 
-        if (!user) {
-            alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
-            return;
-        }
+    if (error) {
+        alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบข้อมูล หรือปิดการยืนยันอีเมลใน Supabase)");
+    } else {
+        // ล็อกอินสำเร็จ เปลี่ยนเส้นทางไปหน้าบอร์ดหลัก
+        window.location.href = "index.html";
+    }
+}
 
-        // ✅ 2. Get values
-        const title = document.getElementById('postTitle').value.trim();
-        const description = document.getElementById('postDesc').value.trim();
-        const type = document.getElementById('postType').value;
-        const peopleLimit = parseInt(document.getElementById('postLimit').value) || 3;
-        const budget = document.getElementById('postBudget').value.trim();
-        const location = document.getElementById('postLocation').value.trim();
-        const imageFile = document.getElementById('postImageFile').files[0];
+// ตรวจสอบสถานะการเข้าสู่ระบบตลอดเวลา และควบคุมการเข้าถึงหน้าเว็บ (Guard)
+function trackAuthSession() {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (session && session.user) {
+            loggedInUser = session.user;
+            
+            // ถ้าล็อกอินค้างไว้ แล้วเผลอเข้าหน้าล็อกอิน ให้เด้งไปหน้าบอร์ดหลักอัตโนมัติ
+            if (currentPage === "signup-login.html" || currentPage === "") {
+                window.location.href = "index.html";
+            }
 
-        // ✅ 3. Basic validation
-        if (!title || !description) {
-            alert("กรุณากรอกหัวข้อและรายละเอียด");
-            return;
-        }
-
-        submitBtn.innerText = "กำลังประกาศ...";
-        submitBtn.disabled = true;
-
-        let imageUrl = null;
-
-        // ✅ 4. Upload image safely
-        if (imageFile) {
-            const fileExt = imageFile.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-            const filePath = `posts/${fileName}`;
-
-            const { error: uploadError } = await supabaseClient
-                .storage
-                .from('activity-images')
-                .upload(filePath, imageFile);
-
-            if (uploadError) {
-                console.error(uploadError);
-                alert("อัปโหลดรูปไม่สำเร็จ");
-            } else {
-                const { data } = supabaseClient
-                    .storage
-                    .from('activity-images')
-                    .getPublicUrl(filePath);
-
-                imageUrl = data.publicUrl;
+            // แสดงชื่อผู้ใช้บนหน้าบอร์ดหลัก (ดึงส่วนหน้าของอีเมลมาแสดงผล)
+            if (document.getElementById('userDisplay')) {
+                document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
+            }
+            fetchPosts();
+        } else {
+            loggedInUser = null;
+            // ถ้ายังไม่ได้ล็อกอิน แต่พยายามเข้าหน้าบอร์ดหลัก ให้เด้งกลับไปล็อกอินก่อน
+            if (currentPage === "index.html") {
+                window.location.href = "signup-login.html";
             }
         }
+    });
+}
 
-        // ✅ 5. Insert post
-        const { error: insertError } = await supabaseClient
-            .from('posts')
-            .insert([{
-                title,
-                description,
-                type,
+// ฟังก์ชันออกจากระบบ (Log Out)
+async function handleLogout() {
+    if(confirm("ต้องการออกจากระบบหรือไม่?")) {
+        await supabaseClient.auth.signOut();
+        window.location.href = "signup-login.html";
+    }
+}
+
+// ==========================================
+// 3. POSTS MANAGEMENT FUNCTIONS
+// ==========================================
+
+// ฟังก์ชันสร้างโพสต์ภารกิจใหม่และบันทึกลงตาราง public.posts
+async function handleCreatePost(event) {
+    event.preventDefault();
+    
+    
+    if (!loggedInUser) {
+        alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
+        return;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    const title = document.getElementById('postTitle').value.trim();
+    const description = document.getElementById('postDesc').value.trim();
+    const type = document.getElementById('postType').value;
+    const peopleLimit = parseInt(document.getElementById('postLimit').value) || 3;
+    const budget = document.getElementById('postBudget').value.trim();
+    const location = document.getElementById('postLocation').value.trim();
+    const imageFile = document.getElementById('postImageFile').files[0];
+
+    submitBtn.innerText = "กำลังประกาศ...";
+    submitBtn.disabled = true;
+
+    let imageUrl = null;
+
+    // อัปโหลดรูปภาพประกอบโพสต์ (ถ้ามี) ไปยัง Storage bucket: activity-images
+    if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+        const filePath = `posts/${fileName}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('activity-images')
+            .upload(filePath, imageFile);
+
+        if (!uploadError) {
+            const { data: urlData } = supabaseClient.storage
+                .from('activity-images')
+                .getPublicUrl(filePath);
+            imageUrl = urlData.publicUrl;
+        } else {
+            console.error("Upload image error:", uploadError.message);
+        }
+    }
+
+    // ส่งข้อมูลเข้าเซิร์ฟเวอร์ Supabase (คอลัมน์แมตช์ตามโครงสร้าง SQL เป๊ะๆ)
+    const { error: insertError } = await supabaseClient
+        .from('posts')
+        .insert([
+            {
+                title: title,
+                description: description,
+                type: type,
                 people_limit: peopleLimit,
                 joined_count: 0,
                 budget: type === 'Commission' ? budget : null,
                 location: type === 'Meet-up' ? location : null,
                 image_url: imageUrl,
-                user_id: user.id,
-                author_email: user.email
-            }]);
+                user_id: loggedInUser.id,
+                author_email: loggedInUser.email
+            }
+        ]);
 
-        if (insertError) {
-            console.error(insertError);
-            throw insertError;
-        }
+    submitBtn.innerText = "ประกาศลงบอร์ด";
+    submitBtn.disabled = false;
 
-        alert("สร้างโพสต์สำเร็จ!");
-
-        // reset UI
+    if (insertError) {
+        alert("เกิดข้อผิดพลาดในการสร้างโพสต์: " + insertError.message);
+    } else {
+        alert("สร้างโพสต์ภารกิจสำเร็จ!");
         document.getElementById('createPostForm').reset();
         closeModal('createModal');
-        toggleTypeFields();
-        fetchPosts();
-
-    } catch (error) {
-        console.error("Create post error:", error);
-        alert("เกิดข้อผิดพลาด: " + error.message);
-
-    } finally {
-        submitBtn.innerText = "ประกาศลงบอร์ด";
-        submitBtn.disabled = false;
+        toggleTypeFields(); // ซ่อนฟิลด์พิเศษกลับไปตามปกติ
+        fetchPosts(); // โหลดข้อมูลบนบอร์ดใหม่ทันที
     }
+}
+
+// ฟังก์ชันดึงข้อมูลโพสต์ทั้งหมดจาก Supabase มาสร้างเป็นการ์ดกิจกรรมบนบอร์ดหลัก
+async function fetchPosts() {
+    const grid = document.getElementById('boardGrid');
+    if (!grid) return;
+
+    const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
+    
+    if (error) {
+        console.error("Error fetching posts:", error.message);
+        return;
+    }
+
+    if (data) {
+        memoryPosts = data;
+        const emptyState = document.getElementById('emptyState');
+        
+        // เคลียร์การ์ดเก่าออกก่อนดึงรอบใหม่เพื่อป้องกันการ์ดซ้ำ
+        grid.querySelectorAll('.post-card').forEach(card => card.remove());
+        
+        if (memoryPosts.length === 0) { 
+            if (emptyState) emptyState.classList.remove('hidden'); 
+        } else { 
+            if (emptyState) emptyState.classList.add('hidden');
+            
+            // วนลูป Render สร้างโค้ดการ์ด HTML ด้วย Tailwind CSS สไตล์โมเดิร์น
+            memoryPosts.forEach(post => {
+                const card = document.createElement('div');
+                card.className = "post-card bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition flex flex-col";
+                
+                // ถ้ารูปกิจกรรมไม่มีในฐานข้อมูล ให้ดึงรูป placeholder มาแสดงชั่วคราว
+                const cardImage = post.image_url ? post.image_url : "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+                
+                card.innerHTML = `
+                    <div class="h-48 w-full bg-gray-200 overflow-hidden relative">
+                        <img src="${cardImage}" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full border border-white">
+                            ${post.type}
+                        </span>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-xl font-black text-gray-800 mb-2">${post.title}</h3>
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${post.description}</p>
+                            
+                            ${post.budget ? `<p class="text-green-600 font-bold text-sm mb-2"><i class="fa-solid fa-money-bill-wave"></i> ค่าตอบแทน: ${post.budget}</p>` : ''}
+                            ${post.location ? `<p class="text-blue-600 font-bold text-sm mb-2"><i class="fa-solid fa-location-dot"></i> สถานที่: ${post.location}</p>` : ''}
+                        </div>
+                        
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 mt-4">
+                            <span><i class="fa-solid fa-user-group text-orange-400"></i> ต้องการ: ${post.people_limit} คน</span>
+                            <span>โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    }
+}
+
+// ==========================================
+// 4. MODAL & DYNAMIC FORM FIELDS INTERACTION
+// ==========================================
+
+// เปิดหน้าต่าง Modal (Create Post)
+function openCreateModal() { 
+    const modal = document.getElementById('createModal');
+    if(modal) modal.classList.remove('hidden'); 
+}
+
+// ปิดหน้าต่าง Modal
+function closeModal(id) { 
+    const modal = document.getElementById(id);
+    if(modal) modal.classList.add('hidden'); 
+}
+
+// เปิด-ปิดฟิลด์กรอกข้อมูลเพิ่มเติม (ค่าตอบแทน/สถานที่) ตามประเภทกิจกรรมที่เลือก
+function toggleTypeFields() {
+    const typeEl = document.getElementById('postType');
+    const commField = document.getElementById('commissionField');
+    const locField = document.getElementById('locationField');
+    
+    if(!typeEl) return;
+    const type = typeEl.value;
+
+    if(commField) commField.classList.toggle('hidden', type !== 'Commission');
+    if(locField) locField.classList.toggle('hidden', type !== 'Meet-up');
 }
 
 // ==========================================
 // 5. APPLICATION INITIALIZER ON WINDOW LOAD
 // ==========================================
-window.onload = function () {
+window.onload = function() {
     trackAuthSession();
 
     const form = document.getElementById("createPostForm");
-
     if (form) {
         form.addEventListener("submit", handleCreatePost);
     }
