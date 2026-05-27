@@ -98,132 +98,88 @@ async function handleSignUp(event) {
 }
 
 // ฟังก์ชันเข้าสู่ระบบ (Log In)
-async function handleLogin(event) {
-    event.preventDefault();
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value.trim();
-    const loginBtn = document.getElementById('loginBtn');
-
-    loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
-    loginBtn.disabled = true;
-
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    
-    loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
-    loginBtn.disabled = false;
-
-    if (error) {
-        alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบข้อมูล หรือปิดการยืนยันอีเมลใน Supabase)");
-    } else {
-        // ล็อกอินสำเร็จ เปลี่ยนเส้นทางไปหน้าบอร์ดหลัก
-        window.location.href = "index.html";
-    }
-}
-
-// ตรวจสอบสถานะการเข้าสู่ระบบตลอดเวลา และควบคุมการเข้าถึงหน้าเว็บ (Guard)
-function trackAuthSession() {
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-        if (session && session.user) {
-            loggedInUser = session.user;
-            
-            // ถ้าล็อกอินค้างไว้ แล้วเผลอเข้าหน้าล็อกอิน ให้เด้งไปหน้าบอร์ดหลักอัตโนมัติ
-            if (currentPage === "signup-login.html" || currentPage === "") {
-                window.location.href = "index.html";
-            }
-
-            // แสดงชื่อผู้ใช้บนหน้าบอร์ดหลัก (ดึงส่วนหน้าของอีเมลมาแสดงผล)
-            if (document.getElementById('userDisplay')) {
-                document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
-            }
-            fetchPosts();
-        } else {
-            loggedInUser = null;
-            // ถ้ายังไม่ได้ล็อกอิน แต่พยายามเข้าหน้าบอร์ดหลัก ให้เด้งกลับไปล็อกอินก่อน
-            if (currentPage === "index.html") {
-                window.location.href = "signup-login.html";
-            }
-        }
-    });
-}
-
-// ฟังก์ชันออกจากระบบ (Log Out)
-async function handleLogout() {
-    if(confirm("ต้องการออกจากระบบหรือไม่?")) {
-        await supabaseClient.auth.signOut();
-        window.location.href = "signup-login.html";
-    }
-}
-
-// ==========================================
-// 3. POSTS MANAGEMENT FUNCTIONS
-// ==========================================
-
-// ฟังก์ชันสร้างโพสต์ภารกิจใหม่และบันทึกลงตาราง public.posts
 async function handleCreatePost(event) {
     event.preventDefault();
 
-    if (!loggedInUser) {
-        alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
-        return;
-    }
-
     const submitBtn = document.getElementById('submitBtn');
 
-    const title = document.getElementById('postTitle').value.trim();
-    const description = document.getElementById('postDesc').value.trim();
-    const type = document.getElementById('postType').value;
-    const peopleLimit = parseInt(document.getElementById('postLimit').value) || 3;
-    const budget = document.getElementById('postBudget').value.trim();
-    const location = document.getElementById('postLocation').value.trim();
-    const imageFile = document.getElementById('postImageFile').files[0];
-
     try {
+        // ✅ 1. Check login properly
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if (!user) {
+            alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
+            return;
+        }
+
+        // ✅ 2. Get values
+        const title = document.getElementById('postTitle').value.trim();
+        const description = document.getElementById('postDesc').value.trim();
+        const type = document.getElementById('postType').value;
+        const peopleLimit = parseInt(document.getElementById('postLimit').value) || 3;
+        const budget = document.getElementById('postBudget').value.trim();
+        const location = document.getElementById('postLocation').value.trim();
+        const imageFile = document.getElementById('postImageFile').files[0];
+
+        // ✅ 3. Basic validation
+        if (!title || !description) {
+            alert("กรุณากรอกหัวข้อและรายละเอียด");
+            return;
+        }
+
         submitBtn.innerText = "กำลังประกาศ...";
         submitBtn.disabled = true;
 
         let imageUrl = null;
 
-        // Upload image if exists
+        // ✅ 4. Upload image safely
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
             const filePath = `posts/${fileName}`;
 
-            const { error: uploadError } = await supabaseClient.storage
+            const { error: uploadError } = await supabaseClient
+                .storage
                 .from('activity-images')
                 .upload(filePath, imageFile);
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error(uploadError);
+                alert("อัปโหลดรูปไม่สำเร็จ");
+            } else {
+                const { data } = supabaseClient
+                    .storage
+                    .from('activity-images')
+                    .getPublicUrl(filePath);
 
-            const { data } = supabaseClient.storage
-                .from('activity-images')
-                .getPublicUrl(filePath);
-
-            imageUrl = data.publicUrl;
+                imageUrl = data.publicUrl;
+            }
         }
 
-        // Insert post
+        // ✅ 5. Insert post
         const { error: insertError } = await supabaseClient
             .from('posts')
-            .insert([
-                {
-                    title,
-                    description,
-                    type,
-                    people_limit: peopleLimit,
-                    joined_count: 0,
-                    budget: type === 'Commission' ? budget : null,
-                    location: type === 'Meet-up' ? location : null,
-                    image_url: imageUrl,
-                    user_id: loggedInUser.id,
-                    author_email: loggedInUser.email
-                }
-            ]);
+            .insert([{
+                title,
+                description,
+                type,
+                people_limit: peopleLimit,
+                joined_count: 0,
+                budget: type === 'Commission' ? budget : null,
+                location: type === 'Meet-up' ? location : null,
+                image_url: imageUrl,
+                user_id: user.id,
+                author_email: user.email
+            }]);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+            console.error(insertError);
+            throw insertError;
+        }
 
         alert("สร้างโพสต์สำเร็จ!");
 
+        // reset UI
         document.getElementById('createPostForm').reset();
         closeModal('createModal');
         toggleTypeFields();
@@ -232,39 +188,11 @@ async function handleCreatePost(event) {
     } catch (error) {
         console.error("Create post error:", error);
         alert("เกิดข้อผิดพลาด: " + error.message);
+
     } finally {
         submitBtn.innerText = "ประกาศลงบอร์ด";
         submitBtn.disabled = false;
     }
-}
-
-// ==========================================
-// 4. MODAL & DYNAMIC FORM FIELDS INTERACTION
-// ==========================================
-
-// เปิดหน้าต่าง Modal (Create Post)
-function openCreateModal() { 
-    const modal = document.getElementById('createModal');
-    if(modal) modal.classList.remove('hidden'); 
-}
-
-// ปิดหน้าต่าง Modal
-function closeModal(id) { 
-    const modal = document.getElementById(id);
-    if(modal) modal.classList.add('hidden'); 
-}
-
-// เปิด-ปิดฟิลด์กรอกข้อมูลเพิ่มเติม (ค่าตอบแทน/สถานที่) ตามประเภทกิจกรรมที่เลือก
-function toggleTypeFields() {
-    const typeEl = document.getElementById('postType');
-    const commField = document.getElementById('commissionField');
-    const locField = document.getElementById('locationField');
-    
-    if(!typeEl) return;
-    const type = typeEl.value;
-
-    if(commField) commField.classList.toggle('hidden', type !== 'Commission');
-    if(locField) locField.classList.toggle('hidden', type !== 'Meet-up');
 }
 
 // ==========================================
