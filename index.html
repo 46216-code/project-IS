@@ -109,6 +109,42 @@
         </div>
     </div>
 
+    <div id="detailsModal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full p-6 relative">
+            <button onclick="closeModal('detailsModal')" class="absolute top-3 right-3 text-xl font-bold cursor-pointer">&times;</button>
+
+            <img id="modalImage" class="w-full h-52 object-cover rounded" />
+
+            <h2 id="modalTitle" class="text-2xl font-bold mt-3"></h2>
+            <p id="modalDesc" class="text-gray-600 mt-2"></p>
+
+            <div class="mt-4 flex justify-end">
+                <button onclick="openConfirmModal()" class="bg-green-500 text-white px-5 py-2 rounded-full font-bold hover:bg-green-600 transition cursor-pointer">
+                    สมัครเข้าร่วม
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl w-full max-w-md p-6 text-center">
+            <h2 class="text-xl font-bold mb-4">ยืนยันการสมัคร</h2>
+
+            <img id="confirmImage" class="w-full h-32 object-cover rounded mb-3" />
+            <p id="confirmTitle" class="font-bold"></p>
+
+            <div class="flex justify-center gap-4 mt-6">
+                <button onclick="closeModal('confirmModal')" class="bg-red-500 text-white px-5 py-2 rounded-full hover:bg-red-600 transition cursor-pointer">
+                    ยกเลิก
+                </button>
+
+                <button onclick="submitApplication()" class="bg-green-500 text-white px-5 py-2 rounded-full hover:bg-green-600 transition cursor-pointer">
+                    ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

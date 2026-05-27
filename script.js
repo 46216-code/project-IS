@@ -1,16 +1,22 @@
 // ==========================================
-// 1. CONFIGURATION & INITIALIZATION
+// 1. CONFIGURATION & INITIALIZATION (FIXED DEPENDENCY)
 // ==========================================
 const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: {
-        persistSession: true,
-        autoRefreshToken: true
-    }
-});
+let supabaseClient = null;
+
+// ป้องกันปัญหา Race Condition: เช็คให้ชัวร์ว่า Supabase SDK โหลดมาจาก CDN เสร็จก่อนรัน
+if (typeof supabase !== 'undefined') {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true
+        }
+    });
+} else {
+    console.error("🚨 Error: ไม่สามารถเรียกใช้งาน Supabase SDK ได้ กรุณาตรวจสอบลำดับ Script ในไฟล์ HTML");
+}
 
 let memoryPosts = [];
 let loggedInUser = null;
@@ -45,6 +51,8 @@ function toggleAuthMode(mode) {
 // ฟังก์ชันสมัครสมาชิก (Sign Up) พร้อมอัปโหลดรูปโปรไฟล์
 async function handleSignUp(event) {
     event.preventDefault();
+    if (!supabaseClient) return alert("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน");
+
     const email = document.getElementById('signUpEmail').value.trim();
     const password = document.getElementById('signUpPass').value.trim();
     const avatarFile = document.getElementById('profileImageFile').files[0];
@@ -100,6 +108,8 @@ async function handleSignUp(event) {
 // ฟังก์ชันเข้าสู่ระบบ (Log In)
 async function handleLogin(event) {
     event.preventDefault();
+    if (!supabaseClient) return alert("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน");
+
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value.trim();
     const loginBtn = document.getElementById('loginBtn');
@@ -115,30 +125,28 @@ async function handleLogin(event) {
     if (error) {
         alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบข้อมูล หรือปิดการยืนยันอีเมลใน Supabase)");
     } else {
-        // ล็อกอินสำเร็จ เปลี่ยนเส้นทางไปหน้าบอร์ดหลัก
         window.location.href = "index.html";
     }
 }
 
 // ตรวจสอบสถานะการเข้าสู่ระบบตลอดเวลา และควบคุมการเข้าถึงหน้าเว็บ (Guard)
 function trackAuthSession() {
+    if (!supabaseClient) return;
+
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
         if (session && session.user) {
             loggedInUser = session.user;
             
-            // ถ้าล็อกอินค้างไว้ แล้วเผลอเข้าหน้าล็อกอิน ให้เด้งไปหน้าบอร์ดหลักอัตโนมัติ
             if (currentPage === "signup-login.html" || currentPage === "") {
                 window.location.href = "index.html";
             }
 
-            // แสดงชื่อผู้ใช้บนหน้าบอร์ดหลัก (ดึงส่วนหน้าของอีเมลมาแสดงผล)
             if (document.getElementById('userDisplay')) {
                 document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
             }
             fetchPosts();
         } else {
             loggedInUser = null;
-            // ถ้ายังไม่ได้ล็อกอิน แต่พยายามเข้าหน้าบอร์ดหลัก ให้เด้งกลับไปล็อกอินก่อน
             if (currentPage === "index.html") {
                 window.location.href = "signup-login.html";
             }
@@ -148,6 +156,7 @@ function trackAuthSession() {
 
 // ฟังก์ชันออกจากระบบ (Log Out)
 async function handleLogout() {
+    if (!supabaseClient) return;
     if(confirm("ต้องการออกจากระบบหรือไม่?")) {
         await supabaseClient.auth.signOut();
         window.location.href = "signup-login.html";
@@ -161,9 +170,7 @@ async function handleLogout() {
 // ฟังก์ชันสร้างโพสต์ภารกิจใหม่และบันทึกลงตาราง public.posts
 async function handleCreatePost(event) {
     event.preventDefault();
-    
-    
-    if (!loggedInUser) {
+    if (!supabaseClient || !loggedInUser) {
         alert("กรุณาเข้าสู่ระบบก่อนสร้างโพสต์");
         return;
     }
@@ -182,7 +189,6 @@ async function handleCreatePost(event) {
 
     let imageUrl = null;
 
-    // อัปโหลดรูปภาพประกอบโพสต์ (ถ้ามี) ไปยัง Storage bucket: activity-images
     if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
@@ -202,7 +208,6 @@ async function handleCreatePost(event) {
         }
     }
 
-    // ส่งข้อมูลเข้าเซิร์ฟเวอร์ Supabase (คอลัมน์แมตช์ตามโครงสร้าง SQL เป๊ะๆ)
     const { error: insertError } = await supabaseClient
         .from('posts')
         .insert([
@@ -229,15 +234,15 @@ async function handleCreatePost(event) {
         alert("สร้างโพสต์ภารกิจสำเร็จ!");
         document.getElementById('createPostForm').reset();
         closeModal('createModal');
-        toggleTypeFields(); // ซ่อนฟิลด์พิเศษกลับไปตามปกติ
-        fetchPosts(); // โหลดข้อมูลบนบอร์ดใหม่ทันที
+        toggleTypeFields();
+        fetchPosts(); 
     }
 }
 
-// ฟังก์ชันดึงข้อมูลโพสต์ทั้งหมดจาก Supabase มาสร้างเป็นการ์ดกิจกรรมบนบอร์ดหลัก
+// ฟังก์ชันดึงข้อมูลโพสต์และสร้างการ์ดกิจกรรมบนบอร์ด (FIXED: Added Apply Button & Logic)
 async function fetchPosts() {
     const grid = document.getElementById('boardGrid');
-    if (!grid) return;
+    if (!grid || !supabaseClient) return;
 
     const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
     
@@ -250,7 +255,6 @@ async function fetchPosts() {
         memoryPosts = data;
         const emptyState = document.getElementById('emptyState');
         
-        // เคลียร์การ์ดเก่าออกก่อนดึงรอบใหม่เพื่อป้องกันการ์ดซ้ำ
         grid.querySelectorAll('.post-card').forEach(card => card.remove());
         
         if (memoryPosts.length === 0) { 
@@ -258,14 +262,32 @@ async function fetchPosts() {
         } else { 
             if (emptyState) emptyState.classList.add('hidden');
             
-            // วนลูป Render สร้างโค้ดการ์ด HTML ด้วย Tailwind CSS สไตล์โมเดิร์น
             memoryPosts.forEach(post => {
                 const card = document.createElement('div');
                 card.className = "post-card bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition flex flex-col";
                 
-                // ถ้ารูปกิจกรรมไม่มีในฐานข้อมูล ให้ดึงรูป placeholder มาแสดงชั่วคราว
+                // แก้ไขจุดเสี่ยงที่ 2: ใช้ภาพ placeholder สำรองกันภาพแตกตั้งแต่หน้าแรก
                 const cardImage = post.image_url ? post.image_url : "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
                 
+                // เช็คจำนวนคนเพื่อควบคุมปุ่มสมัคร
+                const isFull = post.joined_count >= post.people_limit;
+                let btnHtml = "";
+
+                if (isFull) {
+                    btnHtml = `
+                        <button disabled class="mt-4 w-full bg-gray-400 text-white px-4 py-2 rounded-full text-sm font-bold cursor-not-allowed">
+                            <i class="fa-solid fa-user-xmark"></i> เต็มแล้ว / Full
+                        </button>
+                    `;
+                } else {
+                    btnHtml = `
+                        <button onclick="openDetailsModal(${post.id})"
+                            class="mt-4 w-full bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-green-600 transition cursor-pointer">
+                            Apply / ดูรายละเอียด
+                        </button>
+                    `;
+                }
+
                 card.innerHTML = `
                     <div class="h-48 w-full bg-gray-200 overflow-hidden relative">
                         <img src="${cardImage}" class="w-full h-full object-cover">
@@ -282,9 +304,14 @@ async function fetchPosts() {
                             ${post.location ? `<p class="text-blue-600 font-bold text-sm mb-2"><i class="fa-solid fa-location-dot"></i> สถานที่: ${post.location}</p>` : ''}
                         </div>
                         
-                        <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 mt-4">
-                            <span><i class="fa-solid fa-user-group text-orange-400"></i> ต้องการ: ${post.people_limit} คน</span>
-                            <span>โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
+                        <div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 mt-4">
+                                <span><i class="fa-solid fa-user-group text-orange-400"></i> เข้าร่วมแล้ว: <strong class="text-gray-800">${post.joined_count}/${post.people_limit}</strong> คน</span>
+                                <span>โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
+                            </div>
+                            <div class="mt-3">
+                                ${btnHtml}
+                            </div>
                         </div>
                     </div>
                 `;
@@ -295,22 +322,19 @@ async function fetchPosts() {
 }
 
 // ==========================================
-// 4. MODAL & DYNAMIC FORM FIELDS INTERACTION
+// 4. MODAL & FLOW INTERACTIONS (FIXED ALL BUGS)
 // ==========================================
 
-// เปิดหน้าต่าง Modal (Create Post)
 function openCreateModal() { 
     const modal = document.getElementById('createModal');
     if(modal) modal.classList.remove('hidden'); 
 }
 
-// ปิดหน้าต่าง Modal
 function closeModal(id) { 
     const modal = document.getElementById(id);
     if(modal) modal.classList.add('hidden'); 
 }
 
-// เปิด-ปิดฟิลด์กรอกข้อมูลเพิ่มเติม (ค่าตอบแทน/สถานที่) ตามประเภทกิจกรรมที่เลือก
 function toggleTypeFields() {
     const typeEl = document.getElementById('postType');
     const commField = document.getElementById('commissionField');
@@ -321,6 +345,105 @@ function toggleTypeFields() {
 
     if(commField) commField.classList.toggle('hidden', type !== 'Commission');
     if(locField) locField.classList.toggle('hidden', type !== 'Meet-up');
+}
+
+let selectedPostId = null;
+
+// ขั้นตอนที่ 1: กดปุ่มที่การ์ด -> เปิดหน้าต่างรายละเอียดภารกิจ (FIXED IMAGE FALLBACK)
+function openDetailsModal(postId) {
+    const post = memoryPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    selectedPostId = postId;
+
+    document.getElementById("modalTitle").innerText = post.title;
+    document.getElementById("modalDesc").innerText = post.description;
+    
+    // แก้ไขจุดเสี่ยงที่ 2: ถ้ารูปเป็น Null ให้เปลี่ยนไปใช้รูป Default แทนเพื่อไม่ให้รูปแตก
+    document.getElementById("modalImage").src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+
+    document.getElementById("detailsModal").classList.remove("hidden");
+}
+
+// ขั้นตอนที่ 2: กดสมัครจากหน้าต่างรายละเอียด -> เปิดหน้าต่างยืนยัน (FIXED IMAGE FALLBACK)
+function openConfirmModal() {
+    const post = memoryPosts.find(p => p.id === selectedPostId);
+    if (!post) return;
+
+    document.getElementById("confirmTitle").innerText = post.title;
+    
+    // แก้ไขจุดเสี่ยงที่ 3: ป้องกันรูปพังบน Confirm Modal
+    document.getElementById("confirmImage").src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+
+    document.getElementById("confirmModal").classList.remove("hidden");
+}
+
+// ขั้นตอนที่ 3: กดยืนยันใบสมัคร -> บันทึกลงฐานข้อมูล (FIXED: DOUBLE APPLY & AUTOMATIC +1)
+async function submitApplication() {
+    if (!supabaseClient) return;
+    try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+
+        if (!user) {
+            alert("กรุณาเข้าสู่ระบบก่อนสมัคร");
+            return;
+        }
+
+        const post = memoryPosts.find(p => p.id === selectedPostId);
+        if (!post) return;
+
+        // ดักเช็คสิทธิ์เต็มก่อนส่งข้อมูลเข้าเซิร์ฟเวอร์อีกชั้นหนึ่ง
+        if (post.joined_count >= post.people_limit) {
+            alert("ขออภัย กิจกรรมนี้เต็มแล้ว!");
+            return;
+        }
+
+        // แก้ไขจุดเสี่ยงที่ 5: ป้องกันการกดเบิ้ลส่งข้อมูลซ้ำ (Prevent Double Apply)
+        const { data: existing, error: checkError } = await supabaseClient
+            .from("applications")
+            .select("*")
+            .eq("post_id", selectedPostId)
+            .eq("user_id", user.id)
+            .maybeSingle(); // ปลอดภัยกว่า .single() เพราะไม่โยน error เมื่อไม่พบแถวข้อมูล
+
+        if (existing) {
+            alert("คุณสมัครไปแล้ว");
+            return;
+        }
+
+        // ส่งข้อมูลบันทึกใบสมัคร
+        const { error: insertError } = await supabaseClient
+            .from("applications")
+            .insert([
+                {
+                    post_id: selectedPostId,
+                    user_id: user.id
+                }
+            ]);
+
+        if (insertError) throw insertError;
+
+        // แก้ไขจุดเสี่ยงที่ 6: อัปเดตบวกเลขจำนวนผู้เข้าร่วมกิจกรรมเพิ่มขึ้น 1 คนบน DB อัตโนมัติ
+        const { error: updateError } = await supabaseClient
+            .from("posts")
+            .update({ joined_count: post.joined_count + 1 })
+            .eq("id", selectedPostId);
+
+        if (updateError) throw updateError;
+
+        alert("สมัครสำเร็จ!");
+
+        // ทำความสะอาดหน้าจอ ปิด Modals ทั้งหมดตาม Flow
+        closeModal("confirmModal");
+        closeModal("detailsModal");
+
+        // โหลดข้อมูลขึ้นบอร์ดใหม่ทันทีเพื่อให้ปุ่มและจำนวนคนเปลี่ยนตามจริง
+        fetchPosts();
+
+    } catch (err) {
+        console.error(err);
+        alert("เกิดข้อผิดพลาด: " + err.message);
+    }
 }
 
 // ==========================================
