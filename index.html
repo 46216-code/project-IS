@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>City Board - บอร์ดกิจกรรมเมือง</title>
     
-    <!-- Tailwind CSS & FontAwesome Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Google Fonts Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -29,10 +27,8 @@
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden bg-white text-gray-900 antialiased text-lg">
 
-    <!-- NOTABLE TAB HEADER NAVIGATION -->
     <header class="w-full bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
         <div class="flex items-center gap-4">
-            <!-- Contrasting warmer orange logo block -->
             <div class="bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-black rounded-2xl shadow-md shadow-orange-500/20 text-2xl tracking-tight flex items-center justify-center w-14 h-14">
                 CB
             </div>
@@ -43,12 +39,10 @@
         </div>
         
         <div class="flex items-center gap-6">
-            <!-- Create Event Button -->
             <button onclick="openCreateModal()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold px-7 py-3.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2.5 cursor-pointer active:scale-95 text-base">
                 <i class="fa-solid fa-plus text-sm opacity-80"></i> Create
             </button>
             
-            <!-- User Profile Area -->
             <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6">
                 <div class="text-right hidden sm:block">
                     <p id="userDisplay" class="text-orange-950 font-bold text-base tracking-tight">User</p>
@@ -57,7 +51,6 @@
                     </span>
                 </div>
                 
-                <!-- Profile Avatar Icon -->
                 <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc]">
                     <i class="fa-solid fa-user text-white text-3xl translate-y-1"></i>
                 </div>
@@ -65,24 +58,19 @@
         </div>
     </header>
 
-    <!-- SUB-BAR / UTILITY CONTROL ACTIONS BAR -->
-    <div class="w-full bg-white px-8 md:px-12 py-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-4 border-b border-gray-100 z-10">
+    <div class="w-full bg-white px-8 md:px-12 py-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-4 border-b border-gray-100 z-10 relative">
         <div class="flex flex-wrap gap-3">
-            <!-- UPDATED: Filter tab matches the premium bright orange post badges -->
-            <button class="bg-orange-400 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer">
-                <i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter
+            <button id="filterBtn" onclick="toggleFilterMenu()" class="bg-orange-400 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer">
+                <i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: All
             </button>
         </div>
-        <!-- Helper Link Badge -->
-        <button class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-5 py-2 rounded-full font-bold text-sm transition-all duration-150 cursor-pointer">
+        <button onclick="openHowToStart()" class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-5 py-2 rounded-full font-bold text-sm transition-all duration-150 cursor-pointer">
             How do I start?
         </button>
     </div>
 
-    <!-- MAIN BOARD GRID -->
     <main id="boardGrid" class="flex-1 overflow-y-auto p-8 md:p-12 bg-[#fafafa] grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 content-start">
         
-        <!-- EMPTY STATE PLACEHOLDER -->
         <div id="emptyState" class="col-span-full text-center py-40 px-6 flex flex-col items-center justify-center">
             <div class="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center shadow-sm mb-6 text-orange-400">
                 <i class="fa-solid fa-clipboard-list text-3xl"></i>
@@ -93,7 +81,6 @@
         
     </main>
 
-    <!-- CREATE TASK MODAL -->
     <div id="createModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
         <div class="bg-white rounded-[32px] max-w-xl w-full p-8 md:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all max-h-[90vh] overflow-y-auto">
             <button onclick="closeModal('createModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer transition-colors">&times;</button>
@@ -162,10 +149,8 @@
         </div>
     </div>
 
-    <!-- VIEW COMPONENT DETAILS MODAL -->
     <div id="detailsModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
         <div class="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all">
-            <!-- Close Action Button -->
             <button onclick="closeModal('detailsModal')" class="absolute top-5 right-5 text-gray-500 hover:text-gray-800 bg-white/90 backdrop-blur-md hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-10 transition shadow-md border border-gray-100">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -174,7 +159,6 @@
                 <img id="modalImage" class="w-full h-full object-cover" src="" alt="Activity Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent"></div>
                 <div class="absolute bottom-6 left-8 right-8">
-                    <!-- Bright orange status label tag -->
                     <span class="inline-block bg-orange-400 text-white font-bold tracking-wide uppercase text-xs px-3 py-1.5 rounded-lg mb-3 shadow-md shadow-orange-500/10">Active Event</span>
                     <h2 id="modalTitle" class="text-white text-3xl font-extrabold tracking-tight drop-shadow-sm"></h2>
                 </div>
@@ -194,7 +178,6 @@
         </div>
     </div>
 
-    <!-- TRANSACTION CONFIRMATION MODAL -->
     <div id="confirmModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
         <div class="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all p-8 text-center">
             <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-5 border border-emerald-100">
@@ -216,7 +199,6 @@
         </div>
     </div>
 
-    <!-- State Mutations Handler Controller File -->
     <script src="script.js"></script>
 </body>
 </html>
