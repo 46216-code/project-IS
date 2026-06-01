@@ -19,11 +19,12 @@ if (typeof supabase !== 'undefined') {
 }
 
 let memoryPosts = [];
+let currentFilterType = "All"; // บันทึกประเภทตัวกรองปัจจุบันที่เลือกไว้
 let loggedInUser = null;
 const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-// ตรวจสอบชื่อไฟล์หน้าเว็บปัจจุบัน เพื่อใช้ในการเปลี่ยนหน้า (Routing)
-const currentPage = window.location.pathname.split("/").pop();
+// ตรวจสอบชื่อไฟล์หน้าเว็บปัจจุบัน เพื่อใช้ในการเปลี่ยนหน้า (Routing ปลอดภัยขึ้น)
+const currentPage = window.location.pathname.split("/").pop().toLowerCase();
 
 // ==========================================
 // 2. AUTHENTICATION & PROFILE FUNCTIONS
@@ -40,11 +41,11 @@ function toggleAuthMode(mode) {
     if(mode === 'signup') {
         loginForm.style.display = 'none';
         signUpForm.style.display = 'block';
-        subTitle.innerText = "ลงทะเบียนข้อมูลบัญชีของคุณ เพื่อเริ่มใช้งานระบบบอร์ดเมือง";
+        if (subTitle) subTitle.innerText = "ลงทะเบียนข้อมูลบัญชีของคุณ เพื่อเริ่มใช้งานระบบบอร์ดเมือง";
     } else {
         signUpForm.style.display = 'none';
         loginForm.style.display = 'block';
-        subTitle.innerText = "ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม";
+        if (subTitle) subTitle.innerText = "ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม";
     }
 }
 
@@ -105,22 +106,38 @@ async function handleSignUp(event) {
     toggleAuthMode('login');
 }
 
-// ฟังก์ชันเข้าสู่ระบบ (Log In)
+// ฟังก์ชันเข้าสู่ระบบ (Log In) - แก้ไขเพิ่ม Event Prevent Default กันหน้าเว็บรีเฟรชเองเอ๋อ
 async function handleLogin(event) {
-    event.preventDefault();
+    if (event) event.preventDefault();
     if (!supabaseClient) return alert("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน");
 
-    const email = document.getElementById('authEmail').value.trim();
-    const password = document.getElementById('authPassword').value.trim();
+    const emailEl = document.getElementById('authEmail');
+    const passwordEl = document.getElementById('authPassword');
     const loginBtn = document.getElementById('loginBtn');
 
-    loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
-    loginBtn.disabled = true;
+    if (!emailEl || !passwordEl) {
+        console.error("🚨 ไม่พบฟิลด์กรอกข้อมูลอีเมลหรือรหัสผ่านในหน้านี้");
+        return;
+    }
+
+    const email = emailEl.value.trim();
+    const password = passwordEl.value.trim();
+
+    if (!email || !password) {
+        return alert("กรุณากรอกข้อมูลอีเมลและรหัสผ่านให้ครบถ้วน");
+    }
+
+    if (loginBtn) {
+        loginBtn.innerText = "กำลังตรวจสอบสิทธิ์...";
+        loginBtn.disabled = true;
+    }
 
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     
-    loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
-    loginBtn.disabled = false;
+    if (loginBtn) {
+        loginBtn.innerText = "เข้าสู่ระบบ (Log In)";
+        loginBtn.disabled = false;
+    }
 
     if (error) {
         alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบข้อมูล หรือปิดการยืนยันอีเมลใน Supabase)");
@@ -129,7 +146,7 @@ async function handleLogin(event) {
     }
 }
 
-// ตรวจสอบสถานะการเข้าสู่ระบบตลอดเวลา และควบคุมการเข้าถึงหน้าเว็บ (Guard)
+// ตรวจสอบสถานะการเข้าสู่ระบบตลอดเวลา และควบคุมการเข้าถึงหน้าเว็บ (Guard ปรับปรุงใหม่แบบนิ่งเสถียร)
 function trackAuthSession() {
     if (!supabaseClient) return;
 
@@ -137,8 +154,10 @@ function trackAuthSession() {
         if (session && session.user) {
             loggedInUser = session.user;
             
-            if (currentPage === "signup-login.html" || currentPage === "") {
+            // ป้องกันลูปเด้งหน้าสลับไปมาด้วยการเช็คสัญชาติหน้าเว็บปัจจุบันให้ละเอียดขึ้น
+            if (currentPage === "signup-login.html" || currentPage === "signup-login" || currentPage === "") {
                 window.location.href = "index.html";
+                return;
             }
 
             if (document.getElementById('userDisplay')) {
@@ -147,7 +166,8 @@ function trackAuthSession() {
             fetchPosts();
         } else {
             loggedInUser = null;
-            if (currentPage === "index.html") {
+            // ถ้าหลุดเซสชันและไม่ได้อยู่หน้าล็อกอิน ให้พาไปหน้าล็อกอินทันที
+            if (currentPage === "index.html" || currentPage === "index" || currentPage === "/") {
                 window.location.href = "signup-login.html";
             }
         }
@@ -164,7 +184,7 @@ async function handleLogout() {
 }
 
 // ==========================================
-// 3. POSTS MANAGEMENT FUNCTIONS
+// 3. POSTS MANAGEMENT & FILTERING FUNCTIONS
 // ==========================================
 
 // ฟังก์ชันสร้างโพสต์ภารกิจใหม่และบันทึกลงตาราง public.posts
@@ -239,7 +259,7 @@ async function handleCreatePost(event) {
     }
 }
 
-// ฟังก์ชันดึงข้อมูลโพสต์และสร้างการ์ดกิจกรรมบนบอร์ด (FIXED: Added Apply Button & Logic)
+// ฟังก์ชันดึงข้อมูลโพสต์และสร้างการ์ดกิจกรรมบนบอร์ด พร้อมรองรับระบบ Filter
 async function fetchPosts() {
     const grid = document.getElementById('boardGrid');
     if (!grid || !supabaseClient) return;
@@ -253,71 +273,81 @@ async function fetchPosts() {
 
     if (data) {
         memoryPosts = data;
-        const emptyState = document.getElementById('emptyState');
+        renderFilteredPosts();
+    }
+}
+
+// ทำหน้าที่เรนเดอร์โพสต์ลง UI ตามประเภท Filter ที่เลือก
+function renderFilteredPosts() {
+    const grid = document.getElementById('boardGrid');
+    const emptyState = document.getElementById('emptyState');
+    if (!grid) return;
+
+    // ลบการ์ดเดิมออกก่อนเพื่อจัดกลุ่มเรนเดอร์ใหม่
+    grid.querySelectorAll('.post-card').forEach(card => card.remove());
+
+    // กรองข้อมูลด้วยตัวแปรประเภท filter ตัวปัจจุบัน
+    const displayedPosts = currentFilterType === "All" 
+        ? memoryPosts 
+        : memoryPosts.filter(post => post.type === currentFilterType);
+
+    if (displayedPosts.length === 0) { 
+        if (emptyState) emptyState.classList.remove('hidden'); 
+    } else { 
+        if (emptyState) emptyState.classList.add('hidden');
         
-        grid.querySelectorAll('.post-card').forEach(card => card.remove());
-        
-        if (memoryPosts.length === 0) { 
-            if (emptyState) emptyState.classList.remove('hidden'); 
-        } else { 
-            if (emptyState) emptyState.classList.add('hidden');
+        displayedPosts.forEach(post => {
+            const card = document.createElement('div');
+            card.className = "post-card bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition flex flex-col";
             
-            memoryPosts.forEach(post => {
-                const card = document.createElement('div');
-                card.className = "post-card bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition flex flex-col";
-                
-                // แก้ไขจุดเสี่ยงที่ 2: ใช้ภาพ placeholder สำรองกันภาพแตกตั้งแต่หน้าแรก
-                const cardImage = post.image_url ? post.image_url : "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
-                
-                // เช็คจำนวนคนเพื่อควบคุมปุ่มสมัคร
-                const isFull = post.joined_count >= post.people_limit;
-                let btnHtml = "";
+            const cardImage = post.image_url ? post.image_url : "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+            const isFull = post.joined_count >= post.people_limit;
+            let btnHtml = "";
 
-                if (isFull) {
-                    btnHtml = `
-                        <button disabled class="mt-4 w-full bg-gray-400 text-white px-4 py-2 rounded-full text-sm font-bold cursor-not-allowed">
-                            <i class="fa-solid fa-user-xmark"></i> เต็มแล้ว / Full
-                        </button>
-                    `;
-                } else {
-                    btnHtml = `
-                        <button onclick="openDetailsModal(${post.id})"
-                            class="mt-4 w-full bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-green-600 transition cursor-pointer">
-                            Apply / ดูรายละเอียด
-                        </button>
-                    `;
-                }
-
-                card.innerHTML = `
-                    <div class="h-48 w-full bg-gray-200 overflow-hidden relative">
-                        <img src="${cardImage}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full border border-white">
-                            ${post.type}
-                        </span>
-                    </div>
-                    <div class="p-5 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-black text-gray-800 mb-2">${post.title}</h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${post.description}</p>
-                            
-                            ${post.budget ? `<p class="text-green-600 font-bold text-sm mb-2"><i class="fa-solid fa-money-bill-wave"></i> ค่าตอบแทน: ${post.budget}</p>` : ''}
-                            ${post.location ? `<p class="text-blue-600 font-bold text-sm mb-2"><i class="fa-solid fa-location-dot"></i> สถานที่: ${post.location}</p>` : ''}
-                        </div>
-                        
-                        <div>
-                            <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 mt-4">
-                                <span><i class="fa-solid fa-user-group text-orange-400"></i> เข้าร่วมแล้ว: <strong class="text-gray-800">${post.joined_count}/${post.people_limit}</strong> คน</span>
-                                <span>โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
-                            </div>
-                            <div class="mt-3">
-                                ${btnHtml}
-                            </div>
-                        </div>
-                    </div>
+            if (isFull) {
+                btnHtml = `
+                    <button disabled class="mt-4 w-full bg-gray-400 text-white px-4 py-2 rounded-full text-sm font-bold cursor-not-allowed">
+                        <i class="fa-solid fa-user-xmark"></i> เต็มแล้ว / Full
+                    </button>
                 `;
-                grid.appendChild(card);
-            });
-        }
+            } else {
+                btnHtml = `
+                    <button onclick="openDetailsModal(${post.id})"
+                        class="mt-4 w-full bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-green-600 transition cursor-pointer">
+                        Apply / ดูรายละเอียด
+                    </button>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="h-48 w-full bg-gray-200 overflow-hidden relative">
+                    <img src="${cardImage}" class="w-full h-full object-cover">
+                    <span class="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full border border-white">
+                        ${post.type}
+                    </span>
+                </div>
+                <div class="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-black text-gray-800 mb-2">${post.title}</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">${post.description}</p>
+                        
+                        ${post.budget ? `<p class="text-green-600 font-bold text-sm mb-2"><i class="fa-solid fa-money-bill-wave"></i> ค่าตอบแทน: ${post.budget}</p>` : ''}
+                        ${post.location ? `<p class="text-blue-600 font-bold text-sm mb-2"><i class="fa-solid fa-location-dot"></i> สถานที่: ${post.location}</p>` : ''}
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-100 text-xs text-gray-500 mt-4">
+                            <span><i class="fa-solid fa-user-group text-orange-400"></i> เข้าร่วมแล้ว: <strong class="text-gray-800">${post.joined_count}/${post.people_limit}</strong> คน</span>
+                            <span>โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
+                        </div>
+                        <div class="mt-3">
+                            ${btnHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
     }
 }
 
@@ -345,6 +375,67 @@ function toggleTypeFields() {
 
     if(commField) commField.classList.toggle('hidden', type !== 'Commission');
     if(locField) locField.classList.toggle('hidden', type !== 'Meet-up');
+}
+
+// ฟังก์ชันจัดการเปิด-ปิด และสลับตัวกรองกิจกรรม (Filter Menu Layout)
+function toggleFilterMenu() {
+    let menu = document.getElementById('filterDropdownMenu');
+    
+    // ถ้ายังไม่มีเมนูใน Element หน้าจอ ให้สร้างขึ้นมาแบบ Dynamic สไตล์พรีเมียมคุมโทนส้มสว่าง
+    if (!menu) {
+        const filterBtn = document.getElementById('filterBtn');
+        if (!filterBtn) return;
+
+        menu = document.createElement('div');
+        menu.id = 'filterDropdownMenu';
+        menu.className = "absolute mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex flex-col gap-1.5 z-40 w-52 transition-all duration-200";
+        
+        const categories = [
+            { label: "✨ ทั้งหมด / All", value: "All" },
+            { label: "🤝 Cooperation", value: "Cooperation" },
+            { label: "💰 Commission", value: "Commission" },
+            { label: "🌱 Volunteer", value: "Volunteer" },
+            { label: "📍 Meet-up", value: "Meet-up" }
+        ];
+
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = `w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-all text-gray-700 hover:bg-orange-50 hover:text-orange-600 cursor-pointer ${currentFilterType === cat.value ? 'bg-orange-50 text-orange-600' : ''}`;
+            btn.innerText = cat.label;
+            btn.onclick = function() {
+                currentFilterType = cat.value;
+                
+                // แก้ไขไอคอนหรือสัญลักษณ์ป้ายชื่อ Filter หลักที่หัวปุ่มกด
+                filterBtn.innerHTML = `<i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: ${cat.value}`;
+                
+                renderFilteredPosts();
+                menu.classList.add('hidden');
+            };
+            menu.appendChild(btn);
+        });
+
+        // แปะกล่องเมนูลงไปใต้โครงสร้างของ Container ปุ่ม Filter
+        filterBtn.parentNode.appendChild(menu);
+    } else {
+        // หากมีอยู่แล้ว ให้เปิด-ปิดซ่อนการแสดงผลสลับกัน
+        menu.classList.toggle('hidden');
+        
+        // ไฮไลต์ปุ่มประเภทที่เลือกใช้งานให้ตรงสถานะปัจจุบันเสมอ
+        const buttons = menu.querySelectorAll('button');
+        const categories = ["All", "Cooperation", "Commission", "Volunteer", "Meet-up"];
+        buttons.forEach((b, i) => {
+            if (currentFilterType === categories[i]) {
+                b.classList.add('bg-orange-50', 'text-orange-600');
+            } else {
+                b.classList.remove('bg-orange-50', 'text-orange-600');
+            }
+        });
+    }
+}
+
+// ฟังก์ชันตัวช่วยหน้า Guide
+function openHowToStart() {
+    alert("💡 วิธีเริ่มต้นใช้งาน:\n1. เข้าสู่ระบบบัญชีผู้ใช้งานของคุณ\n2. กดปุ่ม 'Create' มุมบนขวาเพื่อสร้างประกาศกิจกรรมใหม่\n3. ค้นหากิจกรรมที่คุณสนใจบนหน้าบอร์ด แล้วกดสมัครเข้าร่วมกิจกรรมได้ทันที!");
 }
 
 let selectedPostId = null;
@@ -452,8 +543,28 @@ async function submitApplication() {
 window.onload = function() {
     trackAuthSession();
 
-    const form = document.getElementById("createPostForm");
-    if (form) {
-        form.addEventListener("submit", handleCreatePost);
+    // เช็คก่อนผูกมัด Event Listener ป้องกันปัญหา Uncaught TypeError ฟอร์มพังข้ามหน้าจอ
+    const createForm = document.getElementById("createPostForm");
+    if (createForm) {
+        createForm.addEventListener("submit", handleCreatePost);
     }
+
+    const loginForm = document.getElementById("loginForm");
+    if (loginForm) {
+        loginForm.addEventListener("submit", handleLogin);
+    }
+
+    const signUpForm = document.getElementById("signUpForm");
+    if (signUpForm) {
+        signUpForm.addEventListener("submit", handleSignUp);
+    }
+    
+    // ปิดเมนู Filter อัตโนมัติเมื่อผู้ใช้คลิกพื้นที่ว่างภายนอก
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('filterDropdownMenu');
+        const filterBtn = document.getElementById('filterBtn');
+        if (menu && filterBtn && !filterBtn.contains(event.target) && !menu.contains(event.target)) {
+            menu.classList.add('hidden');
+        }
+    });
 };
