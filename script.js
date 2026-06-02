@@ -49,7 +49,7 @@ function toggleAuthMode(mode) {
     }
 }
 
-// ฟังก์ชันสมัครสมาชิก (Sign Up) พร้อมอัปโหลดรูปโปรไฟล์
+// ฟังก์ชันสมัครสมาชิก (Sign Up) พร้อมอัปโหลดรูปโปรไฟล์ [เวอร์ชันแก้ไขสมบูรณ์]
 async function handleSignUp(event) {
     event.preventDefault();
     if (!supabaseClient) return alert("ระบบฐานข้อมูลยังไม่พร้อมใช้งาน");
@@ -83,8 +83,9 @@ async function handleSignUp(event) {
     }
 
     let avatarUrl = defaultAvatar;
+    
     // อัปโหลดรูปโปรไฟล์ไปยัง Storage bucket: activity-images (ถ้าผู้ใช้เลือกรูป)
-    if (avatarFile && authData.user) {
+    if (avatarFile && authData && authData.user) {
         const fileExt = avatarFile.name.split('.').pop();
         const filePath = `avatars/${authData.user.id}.${fileExt}`;
         const { error: uploadError } = await supabaseClient.storage.from('activity-images').upload(filePath, avatarFile);
@@ -92,12 +93,27 @@ async function handleSignUp(event) {
         if (!uploadError) {
             const { data: urlData } = supabaseClient.storage.from('activity-images').getPublicUrl(filePath);
             avatarUrl = urlData.publicUrl;
+        } else {
+            console.error("🚨 Storage Upload Error:", uploadError.message);
         }
     }
 
-    // บันทึกข้อมูลลงตาราง public.profiles (สัมพันธ์กับ SQL)
-    if(authData.user) {
-        await supabaseClient.from('profiles').insert([{ id: authData.user.id, username: email.split('@')[0], avatar_url: avatarUrl }]);
+    // บันทึกข้อมูลลงตาราง public.profiles (แยกโครงสร้างชัดเจน ลดโอกาสเกิด Bug)
+    if (authData && authData.user) {
+        const profileData = { 
+            id: authData.user.id, 
+            username: email.split('@')[0], 
+            avatar_url: avatarUrl 
+        };
+
+        const { error: profileError } = await supabaseClient
+            .from('profiles')
+            .insert([profileData]);
+
+        if (profileError) {
+            console.error("🚨 ไม่สามารถสร้างตาราง Profile ได้:", profileError.message);
+            alert("สมัครสมาชิกสำเร็จ แต่ไม่สามารถสร้างโปรไฟล์ได้: " + profileError.message);
+        }
     }
     
     alert("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");

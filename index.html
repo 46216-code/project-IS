@@ -18,18 +18,22 @@
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #ffffff; 
         }
-        /* Custom Modern Smooth Scrollbar */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #fed7aa; border-radius: 9999px; }
-        ::-webkit-scrollbar-thumb:hover { background: #fdba74; }
+        /* บังคับการสกรอลล์ในทุกบราว์เซอร์ด้วยสไตล์ที่ทันสมัย */
+        .custom-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: #fdba74 transparent;
+        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #fed7aa; border-radius: 9999px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #fdba74; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden bg-white text-gray-900 antialiased text-lg">
+<body class="h-screen max-h-screen w-screen flex flex-col overflow-hidden bg-white text-gray-900 antialiased text-lg">
 
-    <header class="w-full bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
+    <header class="w-full h-24 bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
         <div class="flex items-center gap-4">
-            <div class="bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-black rounded-2xl shadow-md shadow-orange-500/20 text-2xl tracking-tight flex items-center justify-center w-14 h-14">
+            <div class="bg-gradient-to-tr from-orange-500 to-amber-400 text-white font-black rounded-2xl shadow-md shadow-orange-500/20 text-2xl tracking-tight flex items-center justify-center w-14 h-14 flex-shrink-0">
                 CB
             </div>
             <div>
@@ -39,11 +43,11 @@
         </div>
         
         <div class="flex items-center gap-6">
-            <button onclick="openCreateModal()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold px-7 py-3.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2.5 cursor-pointer active:scale-95 text-base">
+            <button onclick="openCreateModal()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold px-7 py-3.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2.5 cursor-pointer active:scale-95 text-base flex-shrink-0">
                 <i class="fa-solid fa-plus text-sm opacity-80"></i> Create
             </button>
             
-            <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6">
+            <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0">
                 <div class="text-right hidden sm:block">
                     <p id="userDisplay" class="text-orange-950 font-bold text-base tracking-tight">User</p>
                     <span class="flex items-center justify-end gap-2 text-emerald-600 text-xs font-bold">
@@ -51,16 +55,16 @@
                     </span>
                 </div>
                 
-                <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc]">
+                <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc] flex-shrink-0">
                     <i class="fa-solid fa-user text-white text-3xl translate-y-1"></i>
                 </div>
             </div>
         </div>
     </header>
 
-    <div class="w-full bg-white px-8 md:px-12 py-4 flex flex-shrink-0 flex-wrap items-center justify-between gap-4 border-b border-gray-100 z-10 relative">
-        <div class="flex flex-wrap gap-3">
-            <button id="filterBtn" onclick="toggleFilterMenu()" class="bg-orange-400 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer">
+    <div class="w-full bg-white px-8 md:px-12 py-4 flex flex-shrink-0 items-center justify-between gap-4 border-b border-gray-100 z-30 relative">
+        <div class="flex gap-3 relative z-30">
+            <button id="filterBtn" onclick="toggleFilterMenu()" class="bg-orange-400 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer relative z-30">
                 <i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: All
             </button>
         </div>
@@ -69,20 +73,22 @@
         </button>
     </div>
 
-    <main id="boardGrid" class="flex-1 overflow-y-auto p-8 md:p-12 bg-[#fafafa] grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 content-start">
-        
-        <div id="emptyState" class="col-span-full text-center py-40 px-6 flex flex-col items-center justify-center">
-            <div class="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center shadow-sm mb-6 text-orange-400">
-                <i class="fa-solid fa-clipboard-list text-3xl"></i>
+    <div class="flex-1 min-h-0 w-full overflow-y-auto bg-[#fafafa] custom-scroll z-10">
+        <main id="boardGrid" class="p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 content-start w-full">
+            
+            <div id="emptyState" class="col-span-full text-center py-40 px-6 flex flex-col items-center justify-center">
+                <div class="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center shadow-sm mb-6 text-orange-400">
+                    <i class="fa-solid fa-clipboard-list text-3xl"></i>
+                </div>
+                <p class="text-gray-900 text-2xl font-extrabold">ยังไม่มีประกาศบนบอร์ดในขณะนี้</p>
+                <p class="text-gray-400 text-sm mt-2 max-w-sm leading-relaxed">กดปุ่ม <span class="text-orange-400 font-bold">Create</span> ด้านบนเพื่อสร้างกิจกรรมแรกของคุณ!</p>
             </div>
-            <p class="text-gray-900 text-2xl font-extrabold">ยังไม่มีประกาศบนบอร์ดในขณะนี้</p>
-            <p class="text-gray-400 text-sm mt-2 max-w-sm leading-relaxed">กดปุ่ม <span class="text-orange-400 font-bold">Create</span> ด้านบนเพื่อสร้างกิจกรรมแรกของคุณ!</p>
-        </div>
-        
-    </main>
+            
+        </main>
+    </div>
 
     <div id="createModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
-        <div class="bg-white rounded-[32px] max-w-xl w-full p-8 md:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-[32px] max-w-xl w-full p-8 md:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all max-h-[90vh] overflow-y-auto custom-scroll">
             <button onclick="closeModal('createModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer transition-colors">&times;</button>
             
             <h2 class="text-gray-900 text-2xl font-extrabold mb-6 flex items-center gap-3">
