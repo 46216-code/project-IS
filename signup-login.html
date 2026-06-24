@@ -11,8 +11,18 @@
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100..700&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #e2fcd4; }
+        /* กำหนดให้ครอบคลุมทั้งหน้าเว็บรวมถึงช่องกรอกข้อมูลและปุ่ม */
+        body, input, button, select, textarea { 
+            font-family: 'Anuphan', sans-serif; 
+        }
+        body { 
+            background-color: #e2fcd4; 
+        }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #ff9e59; border-radius: 10px; }
@@ -34,6 +44,7 @@
             <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
                 <i class="fa-solid fa-right-to-bracket text-green-500"></i> เข้าสู่ระบบ (Log In)
             </h2>
+
             <form id="loginForm" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
@@ -73,32 +84,40 @@
             <form id="signUpForm" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-envelope text-orange-400"></i> ระบุที่อยู่อีเมลของคุณ (Email) *
+                        <i class="fa-solid fa-address-card text-orange-400"></i> Username
+                    </label>
+                    <input type="text" id="Username" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="Only enter numbers, Letters, _ and .">
+                    <i class="text-[12px] text-gray-400 block mt-1">Enter 3-16 characters. Cannot be changed.</i>
+                </div>
+
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+                        <i class="fa-solid fa-envelope text-orange-400"></i> Email *
                     </label>
                     <input type="email" id="signUpEmail" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="example@email.com">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-lock text-orange-400"></i> กำหนดรหัสผ่านใหม่ (Password) *
+                        <i class="fa-solid fa-lock text-orange-400"></i> Password
                     </label>
                     <input type="password" id="signUpPass" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="อย่างน้อย 6 ตัวอักษรขึ้นไป">
                 </div>
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-image text-orange-400"></i> อัปโหลดรูปโปรไฟล์ (ไม่บังคับ)
+                        <i class="fa-solid fa-image text-orange-400"></i> Profile Picture
                     </label>
                     <input type="file" id="profileImageFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-[#ff7b23] hover:file:bg-orange-100 cursor-pointer">
                 </div>
 
                 <button type="submit" id="signUpBtn" class="w-full bg-[#ff7b23] text-white border-b-4 border-orange-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-orange-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
-                    ลงทะเบียนสร้างบัญชี (Confirm Sign Up)
+                    Sign Up
                 </button>
             </form>
 
             <p class="text-center text-sm text-gray-600 mt-6">
-                มีบัญชีสมาชิกร่วมทางอยู่แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">กลับไปหน้าเข้าสู่ระบบ (Log In)</button>
+                สมัครสมาชิกไว้แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">เข้าสู่ระบบ (Log In)</button>
             </p>
         </div>
     </div>
