@@ -6,9 +6,7 @@
     <title>City Board App - Sign Up & Log In</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100..700&display=swap" rel="stylesheet">
 
     <style>
-        /* กำหนดให้ครอบคลุมทั้งหน้าเว็บรวมถึงช่องกรอกข้อมูลและปุ่ม */
         body, input, button, select, textarea { 
             font-family: 'Anuphan', sans-serif; 
         }
@@ -84,9 +81,9 @@
             <form id="signUpForm" class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-address-card text-orange-400"></i> Username
+                        <i class="fa-solid fa-address-card text-orange-400"></i> Username *
                     </label>
-                    <input type="text" id="Username" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="Only enter numbers, Letters, _ and .">
+                    <input type="text" id="signUpUsername" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="Only enter numbers, Letters, _ and .">
                     <i class="text-[12px] text-gray-400 block mt-1">Enter 3-16 characters. Cannot be changed.</i>
                 </div>
 
@@ -99,7 +96,7 @@
 
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-lock text-orange-400"></i> Password
+                        <i class="fa-solid fa-lock text-orange-400"></i> Password *
                     </label>
                     <input type="password" id="signUpPass" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="อย่างน้อย 6 ตัวอักษรขึ้นไป">
                 </div>
