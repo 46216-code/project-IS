@@ -11,6 +11,7 @@
             const sessionJson = localStorage.getItem(supabaseStorageKey);
             const currentPage = window.location.pathname.split("/").pop().toLowerCase();
             
+            // ถ้าไม่มี Session ค้างอยู่ และพยายามเข้าหน้าหลัก ให้ดีดไปหน้าล็อกอินทันที
             if (!sessionJson && (currentPage === "index.html" || currentPage === "index" || currentPage === "")) {
                 window.location.replace("signup-login.html");
             }
@@ -30,6 +31,7 @@
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #ffffff; 
         }
+        /* บังคับการสกรอลล์ในทุกบราว์เซอร์ด้วยสไตล์ที่ทันสมัย */
         .custom-scroll {
             scrollbar-width: thin;
             scrollbar-color: #fdba74 transparent;
