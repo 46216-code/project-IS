@@ -320,6 +320,7 @@ function renderFilteredPosts() {
                     </button>
                 `;
             } else {
+                // ปุ่มมีหน้าตาเหมือนกันทั้งหมดทุกกรณีตามโจทย์ต้องการ (Same UI style)
                 btnHtml = `
                     <button onclick="openDetailsModal(${post.id})"
                         class="w-full bg-green-500 text-white px-4 py-2.5 rounded-full text-sm font-bold hover:bg-green-600 transition cursor-pointer">
@@ -456,6 +457,12 @@ function openDetailsModal(postId) {
 function openConfirmModal() {
     const post = memoryPosts.find(p => p.id === selectedPostId);
     if (!post) return;
+
+    // 🌟 เปลี่ยนจากการสกัดด้วย alert() ให้แสดงกล่องแจ้งเตือนด้วย HTML (Modal บล็อก) แทนเมื่อเจ้าของโพสต์คลิกเข้ามา
+    if (loggedInUser && loggedInUser.id === post.user_id) {
+        document.getElementById("ownerWarningModal").classList.remove("hidden");
+        return;
+    }
 
     document.getElementById("confirmTitle").innerText = post.title;
     document.getElementById("confirmImage").src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";

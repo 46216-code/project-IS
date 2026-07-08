@@ -214,6 +214,21 @@
             </div>
         </div>
     </div>
+    <div id="ownerWarningModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-[32px] max-w-sm w-full  relative transform transition-all p-8 text-center animate-fade-in">
+        <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-5 border border-orange-100">
+            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        </div>
+
+        <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight">It's your own post!</h3>
+       
+        <div class="mt-8">
+            <button onclick="closeModal('ownerWarningModal')" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3.5 rounded-2xl transition cursor-pointer active:scale-98 shadow-md">
+                 Close
+            </button>
+        </div>
+    </div>
+</div>
 
     <script src="script.js"></script>
 </body>
