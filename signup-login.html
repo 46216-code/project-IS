@@ -1,127 +1,254 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>City Board App - Sign Up & Log In</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!DOCTYPE html>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100..700&display=swap" rel="stylesheet">
+    <html lang="th">
 
-    <style>
-        /* กำหนดให้ครอบคลุมทั้งหน้าเว็บรวมถึงช่องกรอกข้อมูลและปุ่ม */
-        body, input, button, select, textarea { 
-            font-family: 'Anuphan', sans-serif; 
-        }
-        body { 
-            background-color: #e2fcd4; 
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #ff9e59; border-radius: 10px; }
-    </style>
-</head>
-<body class="h-screen w-screen flex items-center justify-center overflow-hidden p-0 sm:p-4 md:p-6">
+    <head>
 
-    <div id="authScreen" class="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 p-8 m-4">
+        <meta charset="UTF-8">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>City Board App - Sign Up & Log In</title>
+
+    
+
+        <script src="https://cdn.tailwindcss.com"></script>
+
+    
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+        <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100..700&display=swap" rel="stylesheet">
+
+
+
+        <style>
+
+            /* กำหนดให้ครอบคลุมทั้งหน้าเว็บรวมถึงช่องกรอกข้อมูลและปุ่ม */
+
+            body, input, button, select, textarea {
+
+                font-family: 'Anuphan', sans-serif;
+
+            }
+
+            body {
+
+                background-color: #e2fcd4;
+
+            }
+
+            ::-webkit-scrollbar { width: 6px; }
+
+            ::-webkit-scrollbar-track { background: #e2fcd4; }
+
+            ::-webkit-scrollbar-thumb { background: #7fb164; border-radius: 10px; }
+
+        </style>
+
+    </head>
+
+    <body class="min-h-screen w-full flex items-center justify-center overflow-x-hidden overflow-y-auto p-4 md:p-6 py-8">
+
+
+
+        <div id="authScreen" class="w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 p-5 m-3">
+
         
-        <div class="text-center mb-6">
-            <div class="inline-block bg-[#ff7b23] text-white font-black text-3xl p-3 px-5 rounded-2xl border-2 border-black shadow-md mb-3">
-                CB
+
+            <div class="text-center mb-6">
+
+                <div class="inline-block bg-[#ff7b23] text-white font-black text-3xl p-3 px-5 rounded-2xl border-2 border-black shadow-md mb-3">
+
+                    CB
+
+                </div>
+
+                <h1 class="text-[#ff7b23] text-3xl font-black tracking-wide">City Board</h1>
+
+                <p id="authSubtitle" class="text-gray-500 text-sm mt-1">ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม</p>
+
             </div>
-            <h1 class="text-[#ff7b23] text-3xl font-black tracking-wide">City Board</h1>
-            <p id="authSubtitle" class="text-gray-500 text-sm mt-1">ยินดีต้อนรับ! เข้าสู่แพลตฟอร์มรวมตัวทำกิจกรรม</p>
+
+
+
+            <div id="loginFormContainer" style="display: block;">
+
+                <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
+
+                    <i class="fa-solid fa-right-to-bracket text-green-500"></i> เข้าสู่ระบบ (Log In)
+
+                </h2>
+
+
+
+                <form id="loginForm" class="space-y-4">
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-user text-orange-400"></i> อีเมลผู้ใช้งาน (Email) *
+
+                        </label>
+
+                        <input type="email" id="authEmail" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="กรอกอีเมลของคุณ">
+
+                    </div>
+
+
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-lock text-orange-400"></i> รหัสผ่าน (Password) *
+
+                        </label>
+
+                        <input type="password" id="authPassword" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="••••••••">
+
+                    </div>
+
+
+
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+
+                        <label class="flex items-center gap-1 cursor-pointer">
+
+                            <input type="checkbox" checked class="accent-orange-500"> จดจำฉันไว้
+
+                        </label>
+
+                        <a href="#" class="hover:text-orange-500 transition">ลืมรหัสผ่าน?</a>
+
+                    </div>
+
+
+
+                    <button type="submit" id="loginBtn" class="w-full bg-[#41cf43] text-white border-b-4 border-green-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-green-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
+
+                        เข้าสู่ระบบ (Log In)
+
+                    </button>
+
+                </form>
+
+
+
+                <p class="text-center text-sm text-gray-600 mt-6">
+
+                    ยังไม่มีบัญชีผู้ใช้ใช่ไหม? <button type="button" onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up) ที่นี่</button>
+
+                </p>
+
+            </div>
+
+
+
+            <div id="signUpFormContainer" class="hidden text-sm">
+
+                <h2 class="text-lg font-bold  text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
+
+                    <i class="fa-solid fa-user-plus text-[#ff7b23]"></i> ลงทะเบียนสมัครสมาชิก (Sign Up)
+
+                </h2>
+
+                <form id="signUpForm" class="space-y-2.5">
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-address-card text-orange-400"></i> Username
+
+                        </label>
+
+                        <input type="text" id="Username" required class="w-full border-2 border-gray-200 rounded-lg p-2.5 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="Only enter numbers, Letters, _ and .">
+
+                        <i class="text-[12px] text-gray-400 block mt-1">Enter 3-16 characters. Cannot be changed.</i>
+
+                    </div>
+
+
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-envelope text-orange-400"></i> Email
+
+                        </label>
+
+                        <input type="email" id="signUpEmail" required class="w-full border-2 border-gray-200 rounded-lg p-2.5 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="example@email.com">
+
+                    </div>
+
+
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-lock text-orange-400"></i> Password
+
+                        </label>
+
+                        <input type="password" id="signUpPass" required class="w-full border-2 border-gray-200 rounded-lg p-2.5 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="อย่างน้อย 6 ตัวอักษรขึ้นไป">
+
+                    </div>
+
+
+
+                    <div>
+
+                        <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
+
+                            <i class="fa-solid fa-image text-orange-400"></i> Profile Picture
+
+                        </label>
+
+                        <input type="file" id="profileImageFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-x file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-[#ff7b23] hover:file:bg-orange-100 cursor-pointer">
+
+                    </div>
+
+
+
+                    <button type="submit" id="signUpBtn" class="w-full bg-[#ff7b23] text-white border-b-4 border-orange-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-orange-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
+
+                        Sign Up
+
+                    </button>
+
+                </form>
+
+
+
+                <p class="text-center text-sm text-gray-600 mt-6">
+
+                    สมัครสมาชิกไว้แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">เข้าสู่ระบบ (Log In)</button>
+
+                </p>
+
+            </div>
+
         </div>
 
-        <div id="loginFormContainer" style="display: block;">
-            <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
-                <i class="fa-solid fa-right-to-bracket text-green-500"></i> เข้าสู่ระบบ (Log In)
-            </h2>
 
-            <form id="loginForm" class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-user text-orange-400"></i> อีเมลผู้ใช้งาน (Email) *
-                    </label>
-                    <input type="email" id="authEmail" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="กรอกอีเมลของคุณ">
-                </div>
 
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-lock text-orange-400"></i> รหัสผ่าน (Password) *
-                    </label>
-                    <input type="password" id="authPassword" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="••••••••">
-                </div>
+        <script src="script.js"></script>
 
-                <div class="flex items-center justify-between text-xs text-gray-500">
-                    <label class="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked class="accent-orange-500"> จดจำฉันไว้
-                    </label>
-                    <a href="#" class="hover:text-orange-500 transition">ลืมรหัสผ่าน?</a>
-                </div>
+    </body>
 
-                <button type="submit" id="loginBtn" class="w-full bg-[#41cf43] text-white border-b-4 border-green-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-green-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
-                    เข้าสู่ระบบ (Log In)
-                </button>
-            </form>
+    </html> 
 
-            <p class="text-center text-sm text-gray-600 mt-6">
-                ยังไม่มีบัญชีผู้ใช้ใช่ไหม? <button type="button" onclick="toggleAuthMode('signup')" class="text-[#ff7b23] font-bold hover:underline cursor-pointer">สมัครสมาชิก (Sign Up) ที่นี่</button>
-            </p>
-        </div>
-
-        <div id="signUpFormContainer" style="display: none;">
-            <h2 class="text-xl font-extrabold text-gray-800 mb-4 flex items-center gap-2 border-b pb-2 border-gray-100">
-                <i class="fa-solid fa-user-plus text-[#ff7b23]"></i> ลงทะเบียนสมัครสมาชิก (Sign Up)
-            </h2>
-            <form id="signUpForm" class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-address-card text-orange-400"></i> Username
-                    </label>
-                    <input type="text" id="Username" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="Only enter numbers, Letters, _ and .">
-                    <i class="text-[12px] text-gray-400 block mt-1">Enter 3-16 characters. Cannot be changed.</i>
-                </div>
-
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-envelope text-orange-400"></i> Email *
-                    </label>
-                    <input type="email" id="signUpEmail" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="example@email.com">
-                </div>
-
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-lock text-orange-400"></i> Password
-                    </label>
-                    <input type="password" id="signUpPass" required class="w-full border-2 border-gray-200 rounded-xl p-3 focus:outline-none focus:border-[#ff7b23] transition text-sm" placeholder="อย่างน้อย 6 ตัวอักษรขึ้นไป">
-                </div>
-
-                <div>
-                    <label class="block text-gray-700 text-sm font-bold mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-image text-orange-400"></i> Profile Picture
-                    </label>
-                    <input type="file" id="profileImageFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-[#ff7b23] hover:file:bg-orange-100 cursor-pointer">
-                </div>
-
-                <button type="submit" id="signUpBtn" class="w-full bg-[#ff7b23] text-white border-b-4 border-orange-700 font-bold p-3.5 rounded-xl text-lg shadow-lg hover:bg-orange-600 active:border-b-0 active:mt-[4px] transition-all mt-2 cursor-pointer">
-                    Sign Up
-                </button>
-            </form>
-
-            <p class="text-center text-sm text-gray-600 mt-6">
-                สมัครสมาชิกไว้แล้ว? <button type="button" onclick="toggleAuthMode('login')" class="text-green-600 font-bold hover:underline cursor-pointer">เข้าสู่ระบบ (Log In)</button>
-            </p>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
