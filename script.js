@@ -436,7 +436,10 @@ function toggleFilterMenu() {
 }
 
 function openHowToStart() {
-    alert("💡 วิธีเริ่มต้นใช้งาน:\n1. เข้าสู่ระบบบัญชีผู้ใช้งานของคุณ\n2. กดปุ่ม 'Create' มุมบนขวาเพื่อสร้างประกาศกิจกรรมใหม่\n3. ค้นหากิจกรรมที่คุณสนใจบนหน้าบอร์ด แล้วกดสมัครเข้าร่วมกิจกรรมได้ทันที!");
+    const modal = document.getElementById('howToStartModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 
 let selectedPostId = null;

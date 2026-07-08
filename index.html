@@ -52,22 +52,18 @@
             </span> 
         </div>
         
-        <div class="flex items-center gap-6">
-            <button onclick="openCreateModal()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold px-7 py-3.5 rounded-full transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2.5 cursor-pointer active:scale-95 text-base flex-shrink-0">
-                <i class="fa-solid fa-plus text-sm opacity-80"></i> Create
-            </button>
+        <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0">
+            <div class="text-right hidden sm:block">
+                <p class="text-orange-950 font-bold text-base tracking-tight flex items-center gap-1.5 justify-end">
+                    <span id="userDisplay">User</span>
+                </p>
+                <span onclick="openActivityDrawer()" class="flex items-center justify-end gap-1.5 text-orange-500 hover:text-orange-600 text-xs font-bold cursor-pointer transition-all active:scale-95">
+                    <i class="fa-solid fa-rectangle-list"></i> My post
+                </span>
+            </div>
             
-            <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0">
-                <div class="text-right hidden sm:block">
-                    <p id="userDisplay" class="text-orange-950 font-bold text-base tracking-tight">User</p>
-                    <span class="flex items-center justify-end gap-2 text-emerald-600 text-xs font-bold">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
-                    </span>
-                </div>
-                
-                <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc] flex-shrink-0">
-                    <i class="fa-solid fa-user text-white text-3xl translate-y-1"></i>
-                </div>
+            <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc] flex-shrink-0">
+                <i class="fa-solid fa-user text-white text-3xl translate-y-1"></i>
             </div>
         </div>
     </header>
@@ -214,22 +210,106 @@
             </div>
         </div>
     </div>
+
     <div id="ownerWarningModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-[32px] max-w-sm w-full  relative transform transition-all p-8 text-center animate-fade-in">
-        <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-5 border border-orange-100">
-            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        <div class="bg-white rounded-[32px] max-w-sm w-full relative transform transition-all p-8 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-orange-50 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-5 border border-orange-100">
+                <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+            </div>
+
+            <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight">It's your own post!</h3>
+           
+            <div class="mt-8">
+                <button onclick="closeModal('ownerWarningModal')" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3.5 rounded-2xl transition cursor-pointer active:scale-98 shadow-md">
+                     Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="activityDrawerOverlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
+
+    <!-- Drawer Panel (Slides in from the right) -->
+    <div id="activityDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        
+        <!-- Drawer Header -->
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-orange-50/50 to-transparent flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-orange-500/10">
+                    <i class="fa-solid fa-rocket text-base"></i>
+                </div>
+                <div>
+                    <h2 class="text-gray-900 text-xl font-extrabold tracking-tight">My Quests</h2>
+                    <p class="text-gray-400 text-xs font-medium">กิจกรรมของฉัน</p>
+                </div>
+            </div>
+            <!-- Close Button -->
+            <button onclick="closeActivityDrawer()" class="w-9 h-9 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl flex items-center justify-center text-lg transition cursor-pointer border border-gray-100">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
 
-        <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight">It's your own post!</h3>
-       
+        <!-- Drawer Navigation Tabs -->
+        <div class="px-6 py-3 border-b border-gray-50 bg-gray-50/30 flex gap-2 flex-shrink-0">
+            <button class="flex-1 py-2.5 px-4 bg-white text-orange-600 border border-orange-100 shadow-sm rounded-xl font-bold text-sm transition-all cursor-pointer">
+                <i class="fa-solid fa-bullhorn mr-1.5 opacity-80"></i> Hosted
+            </button>
+            <button class="flex-1 py-2.5 px-4 text-gray-500 hover:text-gray-800 hover:bg-white/60 rounded-xl font-bold text-sm transition-all cursor-pointer">
+                <i class="fa-solid fa-handshake-angle mr-1.5 opacity-80"></i> Applied
+            </button>
+        </div>
+
+        <!-- Drawer Content Scroll Area -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scroll bg-slate-50/40">
+            
+            <!-- Example 1: Quest Created by User (Hosted) -->
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3.5 relative overflow-hidden group">
+                <div class="absolute top-0 left-0 h-full w-1.5 bg-orange-500"></div>
+                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=150" class="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-gray-100">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="bg-orange-50 text-orange-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-orange-100 uppercase">Meet-up</span>
+                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md"><i class="fa-solid fa-users text-[10px]"></i> 2/3 Joined</span>
+                    </div>
+                    <h4 class="font-black text-gray-800 text-sm truncate group-hover:text-orange-600 transition-colors">พาสุนัขเดินเล่นวิ่งออกกำลังกายรอบสวนลุม</h4>
+                    <p class="text-gray-400 text-xs mt-1"><i class="fa-solid fa-clock mr-1"></i> Hosted by you</p>
+                </div>
+            </div>
+
+            
+            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3.5 relative overflow-hidden group">
+                <div class="absolute top-0 left-0 h-full w-1.5 bg-emerald-500"></div>
+                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-gray-100">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="bg-green-50 text-green-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-green-100 uppercase">Commission</span>
+                        <span class="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md"><i class="fa-regular fa-clock text-[10px]"></i> Pending</span>
+                    </div>
+                    <h4 class="font-black text-gray-800 text-sm truncate group-hover:text-emerald-600 transition-colors">ตามหาคนช่วยจัดเตรียมสถานที่งานบอร์ดเกมคืนนี้ครับ</h4>
+                    <p class="text-gray-400 text-xs mt-1"><i class="fa-solid fa-user mr-1"></i> Owner: P'Somchai</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="howToStartModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300 animate-fade-in">
+    <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all text-center">
+        
+        <button onclick="closeModal('howToStartModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer transition-colors">&times;</button>
+        
+                    
+
+        <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight">วิธีเริ่มต้นใช้งาน</h3>
+        <p class="text-gray-400 text-sm mt-1 mb-6">idk how to krittin pls write</p>
+
+
         <div class="mt-8">
-            <button onclick="closeModal('ownerWarningModal')" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3.5 rounded-2xl transition cursor-pointer active:scale-98 shadow-md">
-                 Close
+            <button onclick="closeModal('howToStartModal')" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3.5 rounded-full transition-all cursor-pointer active:scale-95 text-base shadow-md">
+                  Close
             </button>
         </div>
     </div>
 </div>
-
     <script src="script.js"></script>
 </body>
 </html>
