@@ -18,7 +18,11 @@
             }
         })();
     </script>
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100..700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -29,7 +33,7 @@
 
     <style>
         body { 
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Anuphan', 'Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #ffffff; 
         }
         /* บังคับการสกรอลล์ในทุกบราว์เซอร์ด้วยสไตล์ที่ทันสมัย */
@@ -45,11 +49,13 @@
 </head>
 <body class="h-screen max-h-screen w-screen flex flex-col overflow-hidden bg-white text-gray-900 antialiased text-lg">
 
-    <header class="w-full h-24 bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
+    <header class="w-full h-20 bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
         <div class="flex items-center gap-4">
+            <button >
             <span class="material-symbols-outlined">
             menu
-            </span> 
+            </span>
+            </button>
         </div>
         
         <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0">
@@ -70,12 +76,12 @@
 
     <div class="w-full bg-white px-8 md:px-12 py-4 flex flex-shrink-0 items-center justify-between gap-4 border-b border-gray-100 z-30 relative">
         <div class="flex gap-3 relative z-30">
-            <button id="filterBtn" onclick="toggleFilterMenu()" class="bg-orange-400 hover:bg-orange-500 text-white px-6 py-2.5 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer relative z-30">
+            <button id="filterBtn" onclick="toggleFilterMenu()" class="bg-orange-400 hover:bg-orange-500 text-white px-5 py-2 rounded-full shadow-md shadow-orange-500/10 font-bold flex items-center gap-2.5 text-sm transition-all active:scale-95 cursor-pointer relative z-30">
                 <i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: All
             </button>
         </div>
-        <button onclick="openHowToStart()" class="bg-orange-50 hover:bg-orange-100 text-orange-600 px-5 py-2 rounded-full font-bold text-sm transition-all duration-150 cursor-pointer">
-            How do I start?
+        <button onclick="openHowToStart()" class="bg-orange-500 hover:bg-orange-100 hover:text-orange-500 text-orange-100 px-5 py-2 rounded-full font-bold text-sm transition-all duration-300 cursor-pointer active:scale-90 hover:scale-110">
+            How do I start
         </button>
     </div>
 
@@ -229,82 +235,32 @@
 
     <div id="activityDrawerOverlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
 
-    <!-- Drawer Panel (Slides in from the right) -->
-    <div id="activityDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white z-50 shadow-[-10px_0_40px_rgba(0,0,0,0.1)] transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
-        
-        <!-- Drawer Header -->
-        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-orange-50/50 to-transparent flex-shrink-0">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-orange-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-orange-500/10">
-                    <i class="fa-solid fa-rocket text-base"></i>
-                </div>
-                <div>
-                    <h2 class="text-gray-900 text-xl font-extrabold tracking-tight">My Quests</h2>
-                    <p class="text-gray-400 text-xs font-medium">กิจกรรมของฉัน</p>
-                </div>
-            </div>
-            <!-- Close Button -->
-            <button onclick="closeActivityDrawer()" class="w-9 h-9 text-gray-400 hover:text-gray-900 hover:bg-gray-50 rounded-xl flex items-center justify-center text-lg transition cursor-pointer border border-gray-100">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-
-        <!-- Drawer Navigation Tabs -->
-        <div class="px-6 py-3 border-b border-gray-50 bg-gray-50/30 flex gap-2 flex-shrink-0">
-            <button class="flex-1 py-2.5 px-4 bg-white text-orange-600 border border-orange-100 shadow-sm rounded-xl font-bold text-sm transition-all cursor-pointer">
-                <i class="fa-solid fa-bullhorn mr-1.5 opacity-80"></i> Hosted
-            </button>
-            <button class="flex-1 py-2.5 px-4 text-gray-500 hover:text-gray-800 hover:bg-white/60 rounded-xl font-bold text-sm transition-all cursor-pointer">
-                <i class="fa-solid fa-handshake-angle mr-1.5 opacity-80"></i> Applied
-            </button>
-        </div>
-
-        <!-- Drawer Content Scroll Area -->
-        <div class="flex-1 overflow-y-auto p-6 space-y-4 custom-scroll bg-slate-50/40">
-            
-            <!-- Example 1: Quest Created by User (Hosted) -->
-            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3.5 relative overflow-hidden group">
-                <div class="absolute top-0 left-0 h-full w-1.5 bg-orange-500"></div>
-                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=150" class="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-gray-100">
-                <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="bg-orange-50 text-orange-600 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-orange-100 uppercase">Meet-up</span>
-                        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md"><i class="fa-solid fa-users text-[10px]"></i> 2/3 Joined</span>
-                    </div>
-                    <h4 class="font-black text-gray-800 text-sm truncate group-hover:text-orange-600 transition-colors">พาสุนัขเดินเล่นวิ่งออกกำลังกายรอบสวนลุม</h4>
-                    <p class="text-gray-400 text-xs mt-1"><i class="fa-solid fa-clock mr-1"></i> Hosted by you</p>
-                </div>
-            </div>
-
-            
-            <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3.5 relative overflow-hidden group">
-                <div class="absolute top-0 left-0 h-full w-1.5 bg-emerald-500"></div>
-                <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" class="w-16 h-16 rounded-xl object-cover flex-shrink-0 bg-gray-100">
-                <div class="min-w-0 flex-1">
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="bg-green-50 text-green-700 text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-green-100 uppercase">Commission</span>
-                        <span class="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md"><i class="fa-regular fa-clock text-[10px]"></i> Pending</span>
-                    </div>
-                    <h4 class="font-black text-gray-800 text-sm truncate group-hover:text-emerald-600 transition-colors">ตามหาคนช่วยจัดเตรียมสถานที่งานบอร์ดเกมคืนนี้ครับ</h4>
-                    <p class="text-gray-400 text-xs mt-1"><i class="fa-solid fa-user mr-1"></i> Owner: P'Somchai</p>
-                </div>
-            </div>
-
-        </div>
-    </div>
+    
     <div id="howToStartModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300 animate-fade-in">
     <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all text-center">
-        
-        <button onclick="closeModal('howToStartModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer transition-colors">&times;</button>
-        
-                    
-
         <h3 class="font-extrabold text-2xl text-gray-900 tracking-tight">วิธีเริ่มต้นใช้งาน</h3>
-        <p class="text-gray-400 text-sm mt-1 mb-6">idk how to krittin pls write</p>
-
+        <div class="h-3"></div>
+        <ol class="space-y-4">
+            <li class="flex items-center gap-4">
+              <!-- The Tilted Square -->
+              <div class="w-10 h-10 bg-orange-500 rounded-xl rotate-12 flex items-center justify-center shadow-md">
+                <!-- The Counter-Rotated Number -->
+                <span class="text-white font-bold -rotate-12">1</span>
+              </div>
+              <!-- List Content -->
+              <span class="text-gray-700 font-medium">Create a new project</span>
+            </li>
+            
+            <li class="flex items-center gap-4">
+              <div class="w-10 h-10 bg-orange-500 rounded-xl rotate-12 flex items-center justify-center shadow-md">
+                <span class="text-white font-bold -rotate-12">2</span>
+              </div>
+              <span class="text-gray-700 font-medium">Install Tailwind CSS</span>
+            </li>
+          </ol>
 
         <div class="mt-8">
-            <button onclick="closeModal('howToStartModal')" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold px-6 py-3.5 rounded-full transition-all cursor-pointer active:scale-95 text-base shadow-md">
+            <button onclick="closeModal('howToStartModal')" class="w-full bg-orange-500 hover:bg-orange-300 hover:scale-105 active:scale-90 duration-200 transition-all text-orange-200 hover:text-orange-600 font-bold px-6 py-3.5 rounded-full transition-all cursor-pointer active:scale-95 text-base shadow-md">
                   Close
             </button>
         </div>
