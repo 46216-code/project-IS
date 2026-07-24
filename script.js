@@ -561,4 +561,32 @@ window.onload = function() {
             menu.classList.add('hidden');
         }
     });
+
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    const openBtn = document.getElementById('open-btn');
+    const closeBtn = document.getElementById('close-btn');
+
+    // Function to slide the sidebar in
+    function openSidebar() {
+      // Remove the negative translation to slide it onto the screen
+      sidebar.classList.remove('-translate-x-full');
+      // Unhide the dark backdrop
+      backdrop.classList.remove('hidden');
+    }
+
+    // Function to slide the sidebar out
+    function closeSidebar() {
+      // Add the negative translation back to push it off-screen
+      sidebar.classList.add('-translate-x-full');
+      // Hide the dark backdrop
+      backdrop.classList.add('hidden');
+    }
+
+    // Attach click events
+    openBtn.addEventListener('click', openSidebar);
+    closeBtn.addEventListener('click', closeSidebar);
+    
+    // Clicking anywhere on the dark backdrop also closes the sidebar
+    backdrop.addEventListener('click', closeSidebar);
 };
