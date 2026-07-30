@@ -668,3 +668,58 @@ window.onload = function() {
     if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
     if (backdrop) backdrop.addEventListener('click', closeSidebar);
 };
+
+const btn = document.getElementById('hold-btn');
+const fill = document.getElementById('progress-fill');
+const toast = document.getElementById('toast');
+
+let holdTimer = null;
+let toastTimer = null;
+
+function startHold() {
+  // Apply 2-second duration (2000ms)
+  fill.classList.remove('duration-0');
+  fill.classList.add('duration-[2000ms]', 'scale-x-100');
+
+  holdTimer = setTimeout(() => {
+    showToast();
+    resetHold();
+  }, 2000);
+}
+
+function resetHold() {
+  if (holdTimer) {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+  
+  // Instant reset on release
+  fill.classList.remove('duration-[2000ms]', 'scale-x-100');
+  fill.classList.add('duration-0');
+}
+
+function showToast() {
+  if (toastTimer) clearTimeout(toastTimer);
+
+  toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+  toast.classList.add('opacity-100', 'scale-100');
+
+  // Keep toast visible for 3 seconds after completion
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('opacity-100', 'scale-100');
+    toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+  }, 3000);
+}
+
+// Mouse events
+btn.addEventListener('mousedown', startHold);
+btn.addEventListener('mouseup', resetHold);
+btn.addEventListener('mouseleave', resetHold);
+
+// Touch events for mobile
+btn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  startHold();
+});
+btn.addEventListener('touchend', resetHold);
+btn.addEventListener('touchcancel', resetHold);

@@ -1,92 +1,94 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tailwind Slide-In Sidebar</title>
-  <!-- Load Tailwind CSS for testing purposes -->
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 font-sans">
+<html>
+<!-- Include Tailwind via CDN if testing directly in an HTML file -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Main Content & Trigger Button -->
-  <div class="p-8">
-    <h1 class="text-2xl font-bold mb-4">My Awesome App</h1>
-    <button id="open-btn" class="px-4 py-2 bg-trasparent text-white rounded-lg shadow hover:bg-blue-700 transition">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#000000" hover:stroke="#FFFFFF" class="size-8">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-</svg>
+<script src="https://cdn.tailwindcss.com"></script>
 
-    </button>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+  <!-- Horizontal Hold Button -->
+  <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 transition-transform">
+    <!-- Progress fill: Custom cubic-bezier easing -->
+    <div id="progress-fill" class="absolute inset-0 bg-blue-600 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
+    <!-- Text & icon overlay -->
+    <div class="relative z-10 flex items-center justify-between w-full">
+      <span class="flex items-center gap-3">
+        <svg class="w-5 h-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+        <span class="font-semibold text-sm">Hold to confirm</span>
+      </span>
+      <span id="btn-status" class="text-xs uppercase tracking-wider text-slate-400 font-bold">2s</span>
+    </div>
+  </button>
+
+  <!-- Centered Toast Notification -->
+  <div id="toast" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl border border-slate-700 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
+    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span class="text-base font-medium">Action completed successfully!</span>
+  </div>
   </div>
 
-  <!-- Backdrop Overlay (Optional but recommended for UX) -->
-  <!-- 'hidden' keeps it invisible initially -->
-  <div 
-    id="backdrop" 
-    class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity"
-  ></div>
+<script>
+  const btn = document.getElementById('hold-btn');
+const fill = document.getElementById('progress-fill');
+const toast = document.getElementById('toast');
+const statusText = document.getElementById('btn-status');
 
-  <!-- Sidebar Container -->
-  <!-- -translate-x-full hides it off-screen to the left -->
-  <aside 
-    id="sidebar" 
-    class="fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out"
-  >
-    <!-- Sidebar Header -->
-    <div class="flex items-center justify-between p-6 border-b">
-      <h2 class="text-xl font-bold text-gray-800">Menu</h2>
-      
-      <!-- Close Button -->
-      <button 
-        id="close-btn" 
-        class="text-gray-500 hover:text-gray-800 p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
-      >
-        <!-- X Icon from Heroicons -->
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-    </div>
+let holdTimer = null;
+let toastTimer = null;
 
-    <!-- Navigation Links -->
-    <nav class="p-6 space-y-4">
-      <a href="#" class="block text-gray-600 hover:text-blue-600 font-medium transition">Dashboard</a>
-      <a href="#" class="block text-gray-600 hover:text-blue-600 font-medium transition">Settings</a>
-      <a href="#" class="block text-gray-600 hover:text-blue-600 font-medium transition">Profile</a>
-    </nav>
-  </aside>
+function startHold() {
+  // Apply 2-second duration (2000ms)
+  fill.classList.remove('duration-0');
+  fill.classList.add('duration-[2000ms]', 'scale-x-100');
+  statusText.textContent = 'Holding...';
 
-  <!-- JavaScript to handle toggling -->
-  <script>
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('backdrop');
-    const openBtn = document.getElementById('open-btn');
-    const closeBtn = document.getElementById('close-btn');
+  holdTimer = setTimeout(() => {
+    showToast();
+    resetHold();
+  }, 2000);
+}
 
-    // Function to slide the sidebar in
-    function openSidebar() {
-      // Remove the negative translation to slide it onto the screen
-      sidebar.classList.remove('-translate-x-full');
-      // Unhide the dark backdrop
-      backdrop.classList.remove('hidden');
-    }
+function resetHold() {
+  if (holdTimer) {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+  
+  // Instant reset on release
+  fill.classList.remove('duration-[2000ms]', 'scale-x-100');
+  fill.classList.add('duration-0');
+  statusText.textContent = '2s';
+}
 
-    // Function to slide the sidebar out
-    function closeSidebar() {
-      // Add the negative translation back to push it off-screen
-      sidebar.classList.add('-translate-x-full');
-      // Hide the dark backdrop
-      backdrop.classList.add('hidden');
-    }
+function showToast() {
+  if (toastTimer) clearTimeout(toastTimer);
 
-    // Attach click events
-    openBtn.addEventListener('click', openSidebar);
-    closeBtn.addEventListener('click', closeSidebar);
-    
-    // Clicking anywhere on the dark backdrop also closes the sidebar
-    backdrop.addEventListener('click', closeSidebar);
-  </script>
+  toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+  toast.classList.add('opacity-100', 'scale-100');
 
-</body>
+  // Keep toast visible for 3 seconds after completion
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('opacity-100', 'scale-100');
+    toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+  }, 5000);
+}
+
+// Mouse events
+btn.addEventListener('mousedown', startHold);
+btn.addEventListener('mouseup', resetHold);
+btn.addEventListener('mouseleave', resetHold);
+
+// Touch events for mobile
+btn.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  startHold();
+});
+btn.addEventListener('touchend', resetHold);
+btn.addEventListener('touchcancel', resetHold);
+</script>
 </html>

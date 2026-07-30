@@ -212,8 +212,19 @@
                 <p id="modalDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line"></p>
                 <div class="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between">
                     <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
-                    <button onclick="openConfirmModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3.5 rounded-full font-bold text-base transition-all duration-200 shadow-md shadow-emerald-500/10 active:scale-95 flex items-center gap-2.5 cursor-pointer">
-                        <i class="fa-solid fa-arrow-right-to-bracket text-sm opacity-90"></i> สมัครเข้าร่วม
+                    <!-- Horizontal Hold Button -->
+                    <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
+                        <!-- Progress fill: Custom cubic-bezier easing -->
+                        <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
+                        <!-- Text & icon overlay -->
+                        <div class="relative z-10 flex items-center justify-between w-full">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                            <span class="font-semibold text-sm">กดค้างเพื่อสมัคร</span>
+                        </span>
+                        </div>
                     </button>
                 </div>
             </div>
@@ -279,6 +290,15 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!--toast notification cool!!-->
+    <div id="toast" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-orange-100 text-orange-950 px-6 py-4 rounded-xl shadow-2xl border border-orange-600 border-2 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
+    <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span class="text-base font-medium"><b>การสมัครสำเร็จ!</b> ติดตามการสมัครที่ปุ่ม Menu ทางด้านซ้ายบนของหน้าหลักได้เลย!</span>
+    </div>
     </div>
 
     <script src="script.js"></script>
