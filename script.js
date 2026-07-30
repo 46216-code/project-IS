@@ -18,11 +18,13 @@ if (typeof supabase !== 'undefined') {
 }
 
 let memoryPosts = [];
+let favoritePostIds = new Set();
+let appliedPostIds = new Set();
 let currentFilterType = "All"; 
+let activeViewTab = "all"; // 'all', 'my', 'favorite', 'applied'
 let loggedInUser = null;
 const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
-// ตรวจสอบชื่อไฟล์หน้าเว็บปัจจุบัน เพื่อใช้ในการเปลี่ยนหน้าอย่างปลอดภัย
 const currentPage = window.location.pathname.split("/").pop().toLowerCase();
 
 // ==========================================
@@ -136,7 +138,7 @@ async function handleLogin(event) {
     }
 
     if (error) {
-        alert("ล็อกอินไม่สำเร็จ: " + error.message + " (กรุณาตรวจสอบข้อมูล หรือปิดการยืนยันอีเมลใน Supabase)");
+        alert("ล็อกอินไม่สำเร็จ: " + error.message);
     } else {
         window.location.href = "index.html";
     }
@@ -149,13 +151,11 @@ function trackAuthSession() {
         if (session && session.user) {
             loggedInUser = session.user;
             
-            // ถ้าล็อกอินแล้ว แต่เผลอเปิดหน้าล็อกอินอยู่ ให้เด้งกลับไปหน้าหลัก (index.html)
             if (currentPage === "signup-login.html" || currentPage === "signup-login" || currentPage === "") {
                 window.location.href = "index.html";
                 return;
             }
 
-            // ค้นหาข้อมูล username จริงจากตาราง profiles ด้วยรหัส UID ผู้ใช้งาน
             try {
                 const { data: profileData, error: profileError } = await supabaseClient
                     .from('profiles')
@@ -177,11 +177,10 @@ function trackAuthSession() {
                 }
             }
 
+            await fetchUserUserData();
             fetchPosts();
         } else {
             loggedInUser = null;
-            
-            // 🔒 สั่งงานตรงนี้: ถ้าไม่มี Session (ไม่ได้ล็อกอิน) และพยายามเข้าหน้าหลัก ให้เด้งไปหน้า signup-login.html ทันที
             if (currentPage === "index.html" || currentPage === "index" || currentPage === "/" || currentPage === "") {
                 window.location.href = "signup-login.html";
             }
@@ -198,8 +197,76 @@ async function handleLogout() {
 }
 
 // ==========================================
-// 3. POSTS MANAGEMENT & FILTERING FUNCTIONS
+// 3. FAVORITE & USER DATA MANAGEMENT
 // ==========================================
+
+async function fetchUserUserData() {
+    if (!loggedInUser || !supabaseClient) return;
+
+    // Fetch User Favorites
+    const { data: favs } = await supabaseClient
+        .from('favorites')
+        .select('post_id')
+        .eq('user_id', loggedInUser.id);
+    
+    if (favs) {
+        favoritePostIds = new Set(favs.map(f => f.post_id));
+    }
+
+    // Fetch User Applications
+    const { data: apps } = await supabaseClient
+        .from('applications')
+        .select('post_id')
+        .eq('user_id', loggedInUser.id);
+
+    if (apps) {
+        appliedPostIds = new Set(apps.map(a => a.post_id));
+    }
+}
+
+async function toggleFavorite(postId, event) {
+    if (event) event.stopPropagation();
+    if (!loggedInUser) return alert("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+    const isFav = favoritePostIds.has(postId);
+
+    if (isFav) {
+        favoritePostIds.delete(postId);
+        await supabaseClient
+            .from('favorites')
+            .delete()
+            .eq('user_id', loggedInUser.id)
+            .eq('post_id', postId);
+    } else {
+        favoritePostIds.add(postId);
+        await supabaseClient
+            .from('favorites')
+            .insert([{ user_id: loggedInUser.id, post_id: postId }]);
+    }
+
+    renderFilteredPosts();
+}
+
+// ==========================================
+// 4. TAB & POSTS MANAGEMENT
+// ==========================================
+
+function switchTab(tab) {
+    activeViewTab = tab;
+    
+    const label = document.getElementById('currentTabLabel');
+    if (label) {
+        if (tab === 'all') {
+            label.classList.add('hidden');
+        } else {
+            label.classList.remove('hidden');
+            label.innerText = tab === 'my' ? 'My Posts' : tab === 'favorite' ? 'Favorite Posts' : 'Applied Posts';
+        }
+    }
+
+    closeSidebar();
+    renderFilteredPosts();
+}
 
 async function handleCreatePost(event) {
     event.preventDefault();
@@ -236,8 +303,6 @@ async function handleCreatePost(event) {
                 .from('activity-images')
                 .getPublicUrl(filePath);
             imageUrl = urlData.publicUrl;
-        } else {
-            console.error("Upload image error:", uploadError.message);
         }
     }
 
@@ -292,16 +357,37 @@ async function fetchPosts() {
 function renderFilteredPosts() {
     const grid = document.getElementById('boardGrid');
     const emptyState = document.getElementById('emptyState');
+    const emptyStateText = document.getElementById('emptyStateText');
     if (!grid) return;
 
     grid.querySelectorAll('.post-card').forEach(card => card.remove());
 
-    const displayedPosts = currentFilterType === "All" 
-        ? memoryPosts 
-        : memoryPosts.filter(post => post.type === currentFilterType);
+    let displayedPosts = [...memoryPosts];
+
+    // Filter by Tab
+    if (activeViewTab === "my" && loggedInUser) {
+        displayedPosts = displayedPosts.filter(post => post.user_id === loggedInUser.id);
+    } else if (activeViewTab === "favorite") {
+        displayedPosts = displayedPosts.filter(post => favoritePostIds.has(post.id));
+    } else if (activeViewTab === "applied") {
+        displayedPosts = displayedPosts.filter(post => appliedPostIds.has(post.id));
+    }
+
+    // Filter by Category
+    if (currentFilterType !== "All") {
+        displayedPosts = displayedPosts.filter(post => post.type === currentFilterType);
+    }
 
     if (displayedPosts.length === 0) { 
-        if (emptyState) emptyState.classList.remove('hidden'); 
+        if (emptyState) {
+            emptyState.classList.remove('hidden'); 
+            if (emptyStateText) {
+                if (activeViewTab === 'favorite') emptyStateText.innerText = "ยังไม่มีรายการที่คุณถูกใจไว้";
+                else if (activeViewTab === 'my') emptyStateText.innerText = "คุณยังไม่ได้สร้างโพสต์ใดๆ";
+                else if (activeViewTab === 'applied') emptyStateText.innerText = "คุณยังไม่ได้สมัครเข้าร่วมกิจกรรมใดๆ";
+                else emptyStateText.innerText = "ยังไม่มีประกาศบนบอร์ดในขณะนี้";
+            }
+        }
     } else { 
         if (emptyState) emptyState.classList.add('hidden');
         
@@ -311,6 +397,7 @@ function renderFilteredPosts() {
             
             const cardImage = post.image_url ? post.image_url : "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
             const isFull = post.joined_count >= post.people_limit;
+            const isFav = favoritePostIds.has(post.id);
             let btnHtml = "";
 
             if (isFull) {
@@ -320,7 +407,6 @@ function renderFilteredPosts() {
                     </button>
                 `;
             } else {
-                // ปุ่มมีหน้าตาเหมือนกันทั้งหมดทุกกรณีตามโจทย์ต้องการ (Same UI style)
                 btnHtml = `
                     <button onclick="openDetailsModal(${post.id})"
                         class="w-full bg-green-500 text-white px-4 py-2.5 rounded-full text-sm font-bold hover:bg-green-600 transition cursor-pointer">
@@ -335,6 +421,9 @@ function renderFilteredPosts() {
                     <span class="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full border border-white shadow-sm">
                         ${post.type}
                     </span>
+                    <button onclick="toggleFavorite(${post.id}, event)" class="absolute top-3 left-3 bg-white/80 hover:bg-white text-rose-500 rounded-full w-9 h-9 flex items-center justify-center shadow-md transition-transform active:scale-90 cursor-pointer">
+                        <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+                    </button>
                 </div>
                 <div class="p-5 flex-1 flex flex-col justify-between overflow-hidden">
                     <div class="overflow-hidden flex flex-col flex-1">
@@ -362,7 +451,7 @@ function renderFilteredPosts() {
 }
 
 // ==========================================
-// 4. MODAL & FLOW INTERACTIONS (FIXED ALL BUGS)
+// 5. MODAL & FLOW INTERACTIONS
 // ==========================================
 
 function openCreateModal() { 
@@ -461,7 +550,6 @@ function openConfirmModal() {
     const post = memoryPosts.find(p => p.id === selectedPostId);
     if (!post) return;
 
-    // 🌟 เปลี่ยนจากการสกัดด้วย alert() ให้แสดงกล่องแจ้งเตือนด้วย HTML (Modal บล็อก) แทนเมื่อเจ้าของโพสต์คลิกเข้ามา
     if (loggedInUser && loggedInUser.id === post.user_id) {
         document.getElementById("ownerWarningModal").classList.remove("hidden");
         return;
@@ -491,7 +579,7 @@ async function submitApplication() {
             return;
         }
 
-        const { data: existing, error: checkError } = await supabaseClient
+        const { data: existing } = await supabaseClient
             .from("applications")
             .select("*")
             .eq("post_id", selectedPostId)
@@ -521,6 +609,8 @@ async function submitApplication() {
 
         if (updateError) throw updateError;
 
+        appliedPostIds.add(selectedPostId);
+
         alert("สมัครสำเร็จ!");
 
         closeModal("confirmModal");
@@ -533,27 +623,35 @@ async function submitApplication() {
     }
 }
 
+function openSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    if (sidebar) sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.remove('hidden');
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    if (sidebar) sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+}
+
 // ==========================================
-// 5. APPLICATION INITIALIZER ON WINDOW LOAD
+// 6. INITIALIZER ON WINDOW LOAD
 // ==========================================
 window.onload = function() {
     trackAuthSession();
 
     const createForm = document.getElementById("createPostForm");
-    if (createForm) {
-        createForm.addEventListener("submit", handleCreatePost);
-    }
+    if (createForm) createForm.addEventListener("submit", handleCreatePost);
 
     const loginForm = document.getElementById("loginForm");
-    if (loginForm) {
-        loginForm.addEventListener("submit", handleLogin);
-    }
+    if (loginForm) loginForm.addEventListener("submit", handleLogin);
 
     const signUpForm = document.getElementById("signUpForm");
-    if (signUpForm) {
-        signUpForm.addEventListener("submit", handleSignUp);
-    }
-    
+    if (signUpForm) signUpForm.addEventListener("submit", handleSignUp);
+
     document.addEventListener('click', function(event) {
         const menu = document.getElementById('filterDropdownMenu');
         const filterBtn = document.getElementById('filterBtn');
@@ -562,31 +660,11 @@ window.onload = function() {
         }
     });
 
-    const sidebar = document.getElementById('sidebar');
     const backdrop = document.getElementById('backdrop');
     const openBtn = document.getElementById('open-btn');
     const closeBtn = document.getElementById('close-btn');
 
-    // Function to slide the sidebar in
-    function openSidebar() {
-      // Remove the negative translation to slide it onto the screen
-      sidebar.classList.remove('-translate-x-full');
-      // Unhide the dark backdrop
-      backdrop.classList.remove('hidden');
-    }
-
-    // Function to slide the sidebar out
-    function closeSidebar() {
-      // Add the negative translation back to push it off-screen
-      sidebar.classList.add('-translate-x-full');
-      // Hide the dark backdrop
-      backdrop.classList.add('hidden');
-    }
-
-    // Attach click events
-    openBtn.addEventListener('click', openSidebar);
-    closeBtn.addEventListener('click', closeSidebar);
-    
-    // Clicking anywhere on the dark backdrop also closes the sidebar
-    backdrop.addEventListener('click', closeSidebar);
+    if (openBtn) openBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
 };
