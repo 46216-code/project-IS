@@ -27,6 +27,99 @@ const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377
 
 const currentPage = window.location.pathname.split("/").pop().toLowerCase();
 
+//--------------------------
+// DECLARING TOASTS
+//--------------------------
+
+const btn = document.getElementById('hold-btn');
+const fill = document.getElementById('progress-fill');
+const toast = document.getElementById('toast');
+
+let holdTimer = null;
+let toastTimer = null;
+
+function startHold() {
+  if (!fill) return;
+
+  // Apply 2-second duration (2000ms)
+  fill.classList.remove('duration-0');
+  fill.classList.add('duration-[2000ms]', 'scale-x-100');
+
+  holdTimer = setTimeout(() => {
+    handleHoldComplete();
+    resetHold();
+  }, 2000);
+}
+
+function resetHold() {
+  if (holdTimer) {
+    clearTimeout(holdTimer);
+    holdTimer = null;
+  }
+
+  if (!fill) return;
+
+  // Instant reset on release
+  fill.classList.remove('duration-[2000ms]', 'scale-x-100');
+  fill.classList.add('duration-0');
+}
+
+async function handleHoldComplete() {
+  if (!selectedPostId) {
+    showToast();
+    return;
+  }
+
+  const post = memoryPosts.find(p => p.id === selectedPostId);
+  if (post && loggedInUser && loggedInUser.id === post.user_id) {
+    if (typeof openConfirmModal === 'function') {
+      openConfirmModal();
+    }
+    return;
+  }
+
+  if (typeof submitApplication === 'function') {
+    await submitApplication(true);
+    return;
+  }
+
+  showToast();
+}
+
+function showToast() {
+  if (!toast) return;
+
+  if (toastTimer) clearTimeout(toastTimer);
+
+  toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+  toast.classList.add('opacity-100', 'scale-100');
+
+  // Keep toast visible for 3 seconds after completion
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('opacity-100', 'scale-100');
+    toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+  }, 3000);
+}
+
+
+// Mouse events
+if (btn) {
+  btn.addEventListener('mousedown', startHold);
+  btn.addEventListener('mouseup', resetHold);
+  btn.addEventListener('mouseleave', resetHold);
+
+  // Touch events for mobile
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startHold();
+  });
+  btn.addEventListener('touchend', resetHold);
+  btn.addEventListener('touchcancel', resetHold);
+}
+
+
+
+
 // ==========================================
 // 2. AUTHENTICATION & PROFILE FUNCTIONS
 // ==========================================
@@ -561,22 +654,22 @@ function openConfirmModal() {
     document.getElementById("confirmModal").classList.remove("hidden");
 }
 
-async function submitApplication() {
-    if (!supabaseClient) return;
+async function submitApplication(showSuccessToast = false) {
+    if (!supabaseClient) return false;
     try {
         const { data: { user } } = await supabaseClient.auth.getUser();
 
         if (!user) {
             alert("กรุณาเข้าสู่ระบบก่อนสมัคร");
-            return;
+            return false;
         }
 
         const post = memoryPosts.find(p => p.id === selectedPostId);
-        if (!post) return;
+        if (!post) return false;
 
         if (post.joined_count >= post.people_limit) {
             alert("ขออภัย กิจกรรมนี้เต็มแล้ว!");
-            return;
+            return false;
         }
 
         const { data: existing } = await supabaseClient
@@ -588,7 +681,7 @@ async function submitApplication() {
 
         if (existing) {
             alert("คุณสมัครไปแล้ว");
-            return;
+            return false;
         }
 
         const { error: insertError } = await supabaseClient
@@ -611,15 +704,22 @@ async function submitApplication() {
 
         appliedPostIds.add(selectedPostId);
 
-        alert("สมัครสำเร็จ!");
-
         closeModal("confirmModal");
         closeModal("detailsModal");
         fetchPosts();
 
+        if (showSuccessToast) {
+            showToast();
+        } else {
+            alert("สมัครสำเร็จ!");
+        }
+
+        return true;
+
     } catch (err) {
         console.error(err);
         alert("เกิดข้อผิดพลาด: " + err.message);
+        return false;
     }
 }
 
@@ -668,58 +768,3 @@ window.onload = function() {
     if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
     if (backdrop) backdrop.addEventListener('click', closeSidebar);
 };
-
-const btn = document.getElementById('hold-btn');
-const fill = document.getElementById('progress-fill');
-const toast = document.getElementById('toast');
-
-let holdTimer = null;
-let toastTimer = null;
-
-function startHold() {
-  // Apply 2-second duration (2000ms)
-  fill.classList.remove('duration-0');
-  fill.classList.add('duration-[2000ms]', 'scale-x-100');
-
-  holdTimer = setTimeout(() => {
-    showToast();
-    resetHold();
-  }, 2000);
-}
-
-function resetHold() {
-  if (holdTimer) {
-    clearTimeout(holdTimer);
-    holdTimer = null;
-  }
-  
-  // Instant reset on release
-  fill.classList.remove('duration-[2000ms]', 'scale-x-100');
-  fill.classList.add('duration-0');
-}
-
-function showToast() {
-  if (toastTimer) clearTimeout(toastTimer);
-
-  toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
-  toast.classList.add('opacity-100', 'scale-100');
-
-  // Keep toast visible for 3 seconds after completion
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('opacity-100', 'scale-100');
-    toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
-  }, 3000);
-}
-
-// Mouse events
-btn.addEventListener('mousedown', startHold);
-btn.addEventListener('mouseup', resetHold);
-btn.addEventListener('mouseleave', resetHold);
-
-// Touch events for mobile
-btn.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  startHold();
-});
-btn.addEventListener('touchend', resetHold);
-btn.addEventListener('touchcancel', resetHold);
