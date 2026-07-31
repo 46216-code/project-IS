@@ -218,7 +218,9 @@ async function handleSignUp(event) {
     }
 
     if(authData.user) {
-        await supabaseClient.from('profiles').insert([{ id: authData.user.id, username: chosenUsername, avatar_url: avatarUrl }]);
+        await supabaseClient
+            .from('profiles')
+            .upsert([{ id: authData.user.id, username: chosenUsername, avatar_url: avatarUrl }], { onConflict: 'id' });
     }
     
     showToast("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
@@ -296,6 +298,7 @@ function trackAuthSession() {
                 }
             }
 
+            await ensureUserProfile(loggedInUser.id);
             await fetchUserUserData();
             fetchPosts();
         } else {
@@ -312,6 +315,35 @@ async function handleLogout() {
     if(confirm("ต้องการออกจากระบบหรือไม่?")) {
         await supabaseClient.auth.signOut();
         window.location.href = "signup-login.html";
+    }
+}
+
+async function ensureUserProfile(userId = loggedInUser?.id) {
+    if (!supabaseClient || !userId) return false;
+
+    try {
+        const { data: existingProfile, error: selectError } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (selectError) throw selectError;
+        if (existingProfile) return true;
+
+        const fallbackName = loggedInUser?.email?.split('@')[0] || 'User';
+        const { error: insertError } = await supabaseClient
+            .from('profiles')
+            .insert([{ id: userId, username: fallbackName, avatar_url: defaultAvatar }]);
+
+        if (insertError && insertError.code !== '23505') {
+            throw insertError;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('Error ensuring user profile:', err.message);
+        return false;
     }
 }
 
@@ -895,6 +927,12 @@ async function submitApplication(showSuccessToast = false) {
 
         if (post.joined_count >= post.people_limit) {
             showToast("ขออภัย กิจกรรมนี้เต็มแล้ว!");
+            return false;
+        }
+
+        const profileReady = await ensureUserProfile(user.id);
+        if (!profileReady) {
+            showToast("ไม่สามารถสร้างข้อมูลโปรไฟล์ผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง");
             return false;
         }
 
