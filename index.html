@@ -41,7 +41,7 @@
 </head>
 <body class="h-screen max-h-screen w-screen flex flex-col overflow-hidden bg-white text-gray-900 antialiased text-lg">
 
-    <header class="w-full h-20 bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-0shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
+    <header class="w-full h-20 bg-gradient-to-r from-orange-50 to-orange-100/50 px-8 md:px-12 py-5 flex flex-shrink-0 items-center justify-between gap-6 border-b border-orange-200/60 z-20 shadow-sm">
         <button id="open-btn" class="px-4 py-2 text-white rounded-lg cursor-pointer">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#000000" class="size-8">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -73,7 +73,6 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <!-- ADDED: Create Post Button -->
             <button onclick="openCreateModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2 rounded-full shadow-md shadow-emerald-500/10 font-bold flex items-center gap-2 text-sm transition-all active:scale-95 cursor-pointer">
                 <i class="fa-solid fa-plus"></i> Create Post
             </button>
@@ -193,10 +192,70 @@
         </div>
     </div>
 
+    <!-- Edit Post Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all">
+        <div class="bg-white rounded-[32px] max-w-xl w-full p-8 shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('editModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer">&times;</button>
+            <h2 class="text-gray-900 text-2xl font-extrabold mb-6">แก้ไขโพสต์ภารกิจ</h2>
+            
+            <form id="editPostForm" class="space-y-4 text-sm">
+                <input type="hidden" id="editPostId">
+                <div>
+                    <label class="block text-gray-700 font-bold mb-1">หัวข้อกิจกรรม *</label>
+                    <input type="text" id="editPostTitle" required class="w-full border border-gray-200 rounded-2xl p-3.5">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-bold mb-1">รายละเอียด *</label>
+                    <textarea id="editPostDesc" required rows="3" class="w-full border border-gray-200 rounded-2xl p-3.5"></textarea>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-1">ประเภท *</label>
+                        <select id="editPostType" onchange="toggleEditTypeFields()" class="w-full border border-gray-200 rounded-2xl p-3.5 bg-white">
+                            <option value="Cooperation">Cooperation</option>
+                            <option value="Commission">Commission</option>
+                            <option value="Volunteer">Volunteer</option>
+                            <option value="Meet-up">Meet-up</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-bold mb-1">จำนวนรับ *</label>
+                        <input type="number" id="editPostLimit" min="1" required class="w-full border border-gray-200 rounded-2xl p-3.5">
+                    </div>
+                </div>
+                <div id="editCommissionField" class="hidden">
+                    <label class="block text-gray-700 font-bold mb-1">ค่าตอบแทน</label>
+                    <input type="text" id="editPostBudget" class="w-full border border-gray-200 rounded-2xl p-3.5">
+                </div>
+                <div id="editLocationField" class="hidden">
+                    <label class="block text-gray-700 font-bold mb-1">สถานที่</label>
+                    <input type="text" id="editPostLocation" class="w-full border border-gray-200 rounded-2xl p-3.5">
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('editModal')" class="bg-gray-100 text-gray-600 px-6 py-2.5 rounded-full font-bold cursor-pointer">ยกเลิก</button>
+                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold cursor-pointer">บันทึกการแก้ไข</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Applicant Roster Modal -->
+    <div id="rosterModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all">
+        <div class="bg-white rounded-[32px] max-w-lg w-full p-8 shadow-2xl border border-gray-100 relative max-h-[85vh] overflow-y-auto custom-scroll">
+            <button onclick="closeModal('rosterModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer">&times;</button>
+            <h2 class="text-gray-900 text-2xl font-extrabold mb-1">รายชื่อผู้สมัครเข้าร่วม</h2>
+            <p class="text-gray-400 text-xs mb-6">คุณสามารถตรวจสอบรายชื่อ พร้อมกด ยอมรับ (Accept) หรือ ปฏิเสธ (Decline) ได้ที่นี่</p>
+            
+            <div id="rosterList" class="space-y-3">
+                <!-- Applicant items dynamically generated here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Details Modal -->
     <div id="detailsModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
         <div class="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all">
-            <button onclick="closeModal('detailsModal')" class="absolute top-5 right-5 text-gray-500 hover:text-gray-800 bg-white/90 backdrop-blur-md hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-10 transition shadow-md border border-gray-100">
+            <button onclick="closeModal('detailsModal')" class="absolute top-5 right-5 text-gray-500 hover:text-gray-800 bg-white/90 backdrop-blur-md hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-10 transition shadow-md border border-gray-100 cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <div class="relative h-72 bg-gray-100">
@@ -212,17 +271,14 @@
                 <p id="modalDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line"></p>
                 <div class="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between">
                     <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
-                    <!-- Horizontal Hold Button -->
                     <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
-                        <!-- Progress fill: Custom cubic-bezier easing -->
                         <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
-                        <!-- Text & icon overlay -->
                         <div class="relative z-10 flex items-center justify-between w-full">
                         <span class="flex items-center gap-3">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
-                            <span class="font-semibold text-sm">กดค้างเพื่อสมัคร</span>
+                            <span id="hold-btn-label" class="font-semibold text-sm">กดค้างเพื่อสมัคร</span>
                         </span>
                         </div>
                     </button>
@@ -292,40 +348,12 @@
         </div>
     </div>
 
-    <!--toast notification cool!!-->
+    <!-- Toast Notifications -->
     <div id="toast" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-orange-100 text-orange-950 px-6 py-4 rounded-xl shadow-2xl border border-orange-600 border-2 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
-    <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-    </svg>
-    <span class="text-base font-medium"><b>การสมัครสำเร็จ!</b> ติดตามการสมัครที่ปุ่ม Menu ทางด้านซ้ายบนของหน้าหลักได้เลย!</span>
-    </div>
-    </div>
-
-    <!--toast notification cool!! 2-->
-    <div id="toast_signup" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-orange-100 text-orange-950 px-6 py-4 rounded-xl shadow-2xl border border-orange-600 border-2 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
-    <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-    </svg>
-    <span class="text-base font-medium"> โปรดเข้าสู่ระบบก่อนที่จะสมัคร </span>
-    </div>
-    </div>
-
-    <!--toast notification cool!! 3-->
-    <div id="toast_full" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-orange-100 text-orange-950 px-6 py-4 rounded-xl shadow-2xl border border-orange-600 border-2 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
-    <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-    </svg>
-    <span class="text-base font-medium"> ขออภัย กิจกรรมนี้เต็มแล้ว! </span>
-    </div>
-    </div>
-
-    <!--toast notification cool!! 4-->
-    <div id="toast_own_post" class="fixed mt-[95vh] left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 bg-orange-100 text-orange-950 px-6 py-4 rounded-xl shadow-2xl border border-orange-600 border-2 opacity-0 scale-90 pointer-events-none transition-all duration-300 z-50">
-    <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-    </svg>
-    <span class="text-base font-medium">This is your own post!</span>
-    </div>
+        <svg class="w-6 h-6 text-orange-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span id="toastMessage" class="text-base font-medium">การสมัครสำเร็จ! ติดตามการสมัครที่ปุ่ม Menu ทางด้านซ้ายบนของหน้าหลักได้เลย!</span>
     </div>
 
     <script src="script.js"></script>
