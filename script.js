@@ -23,6 +23,7 @@ let appliedPostIds = new Set();
 let currentFilterType = "All"; 
 let activeViewTab = "all"; // 'all', 'my', 'favorite', 'applied'
 let loggedInUser = null;
+let loggedInUsername = "User";
 let selectedPostId = null;
 const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
@@ -315,10 +316,12 @@ function trackAuthSession() {
 
                 if (profileError) throw profileError;
 
+                loggedInUsername = profileData && profileData.username 
+                    ? profileData.username 
+                    : loggedInUser.email.split('@')[0];
+
                 if (document.getElementById('userDisplay')) {
-                    document.getElementById('userDisplay').innerText = profileData && profileData.username 
-                        ? profileData.username 
-                        : loggedInUser.email.split('@')[0];
+                    document.getElementById('userDisplay').innerText = loggedInUsername;
                 }
 
                 const avatarImg = document.getElementById('userAvatarDisplay');
@@ -329,8 +332,9 @@ function trackAuthSession() {
                 }
             } catch (err) {
                 console.error("Error fetching custom profile data:", err.message);
+                loggedInUsername = loggedInUser.email.split('@')[0];
                 if (document.getElementById('userDisplay')) {
-                    document.getElementById('userDisplay').innerText = loggedInUser.email.split('@')[0];
+                    document.getElementById('userDisplay').innerText = loggedInUsername;
                 }
             }
 
@@ -459,14 +463,18 @@ async function handleUpdateProfile(event) {
     } else {
         showToast("อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
         
-        if (newUsername && document.getElementById('userDisplay')) {
-            document.getElementById('userDisplay').innerText = newUsername;
+        if (newUsername) {
+            loggedInUsername = newUsername;
+            if (document.getElementById('userDisplay')) {
+                document.getElementById('userDisplay').innerText = newUsername;
+            }
         }
         if (avatarUrl && document.getElementById('userAvatarDisplay')) {
             document.getElementById('userAvatarDisplay').src = avatarUrl;
         }
 
         closeModal('profileModal');
+        fetchPosts(); // Refresh post authors across the board
     }
 }
 
@@ -690,7 +698,11 @@ async function fetchPosts() {
     const grid = document.getElementById('boardGrid');
     if (!grid || !supabaseClient) return;
 
-    const { data, error } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
+    // Fetch posts along with the creator's username from the profiles table
+    const { data, error } = await supabaseClient
+        .from('posts')
+        .select('*, profiles(username)')
+        .order('id', { ascending: false });
     
     if (error) {
         console.error("Error fetching posts:", error.message);
@@ -698,10 +710,16 @@ async function fetchPosts() {
     }
 
     if (data) {
-        memoryPosts = data.map(post => ({
-            ...post,
-            joined_count: Math.min(post.people_limit || 999999, Math.max(0, Number(post.joined_count || 0)))
-        }));
+        memoryPosts = data.map(post => {
+            const authorName = post.profiles?.username 
+                || (post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ');
+
+            return {
+                ...post,
+                author_display_name: authorName,
+                joined_count: Math.min(post.people_limit || 999999, Math.max(0, Number(post.joined_count || 0)))
+            };
+        });
         renderFilteredPosts();
     }
 }
@@ -806,7 +824,7 @@ function renderFilteredPosts() {
                     <div class="flex flex-col pt-3 border-t border-gray-100 flex-shrink-0">
                         <div class="flex items-center justify-between text-xs text-gray-500 mb-3">
                             <span><i class="fa-solid fa-user-group text-orange-400"></i> เข้าร่วมแล้ว: <strong class="text-gray-800">${post.joined_count}/${post.people_limit}</strong> คน</span>
-                            <span class="truncate max-w-[120px]">โดย: ${post.author_email ? post.author_email.split('@')[0] : 'ไม่ระบุ'}</span>
+                            <span class="truncate max-w-[120px]">โดย: ${post.author_display_name}</span>
                         </div>
                         ${btnHtml}
                     </div>
