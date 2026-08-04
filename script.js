@@ -23,6 +23,7 @@ let appliedPostIds = new Set();
 let currentFilterType = "All"; 
 let activeViewTab = "all"; // 'all', 'my', 'favorite', 'applied'
 let loggedInUser = null;
+let selectedPostId = null;
 const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150";
 
 const currentPage = window.location.pathname.split("/").pop().toLowerCase();
@@ -39,114 +40,114 @@ let holdTimer = null;
 let toastTimer = null;
 
 function updateHoldButtonState(postId = selectedPostId) {
-  const holdButton = document.getElementById('hold-btn');
-  const holdLabel = document.getElementById('hold-btn-label');
-  const post = memoryPosts.find(p => p.id === postId);
-  const isAlreadyApplied = !!post && appliedPostIds.has(post.id);
+    const holdButton = document.getElementById('hold-btn');
+    const holdLabel = document.getElementById('hold-btn-label');
+    const post = memoryPosts.find(p => p.id === postId);
+    const isAlreadyApplied = !!post && appliedPostIds.has(post.id);
 
-  if (holdButton) {
-    holdButton.disabled = isAlreadyApplied;
-    holdButton.classList.toggle('opacity-70', isAlreadyApplied);
-    holdButton.classList.toggle('cursor-not-allowed', isAlreadyApplied);
-    holdButton.classList.toggle('hover:scale-105', !isAlreadyApplied);
-    holdButton.classList.toggle('active:scale-95', !isAlreadyApplied);
-    holdButton.classList.toggle('bg-gray-500', isAlreadyApplied);
-    holdButton.classList.toggle('border-gray-400', isAlreadyApplied);
-    holdButton.classList.toggle('bg-slate-800', !isAlreadyApplied);
-    holdButton.classList.toggle('border-slate-700', !isAlreadyApplied);
-  }
+    if (holdButton) {
+        holdButton.disabled = isAlreadyApplied;
+        holdButton.classList.toggle('opacity-70', isAlreadyApplied);
+        holdButton.classList.toggle('cursor-not-allowed', isAlreadyApplied);
+        holdButton.classList.toggle('hover:scale-105', !isAlreadyApplied);
+        holdButton.classList.toggle('active:scale-95', !isAlreadyApplied);
+        holdButton.classList.toggle('bg-gray-500', isAlreadyApplied);
+        holdButton.classList.toggle('border-gray-400', isAlreadyApplied);
+        holdButton.classList.toggle('bg-slate-800', !isAlreadyApplied);
+        holdButton.classList.toggle('border-slate-700', !isAlreadyApplied);
+    }
 
-  if (holdLabel) {
-    holdLabel.innerText = isAlreadyApplied ? 'คุณสมัครไปแล้ว' : 'กดค้างเพื่อสมัคร';
-  }
+    if (holdLabel) {
+        holdLabel.innerText = isAlreadyApplied ? 'คุณสมัครไปแล้ว' : 'กดค้างเพื่อสมัคร';
+    }
 
-  if (fill) {
-    fill.classList.remove('scale-x-100');
-    fill.classList.add('scale-x-0');
-  }
+    if (fill) {
+        fill.classList.remove('scale-x-100');
+        fill.classList.add('scale-x-0');
+    }
 }
 
 function startHold() {
-  if (!fill || (btn && btn.disabled)) return;
+    if (!fill || (btn && btn.disabled)) return;
 
-  fill.classList.remove('duration-0');
-  fill.classList.add('duration-[2000ms]', 'scale-x-100');
+    fill.classList.remove('duration-0');
+    fill.classList.add('duration-[2000ms]', 'scale-x-100');
 
-  holdTimer = setTimeout(() => {
-    handleHoldComplete();
-    resetHold();
-  }, 2000);
+    holdTimer = setTimeout(() => {
+        handleHoldComplete();
+        resetHold();
+    }, 2000);
 }
 
 function resetHold() {
-  if (holdTimer) {
-    clearTimeout(holdTimer);
-    holdTimer = null;
-  }
+    if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+    }
 
-  if (!fill) return;
+    if (!fill) return;
 
-  fill.classList.remove('duration-[2000ms]', 'scale-x-100');
-  fill.classList.add('duration-0');
+    fill.classList.remove('duration-[2000ms]', 'scale-x-100');
+    fill.classList.add('duration-0');
 }
 
 async function handleHoldComplete() {
-  if (!selectedPostId) {
-    showToast();
-    return;
-  }
-
-  const post = memoryPosts.find(p => p.id === selectedPostId);
-  if (post && appliedPostIds.has(post.id)) {
-    updateHoldButtonState(selectedPostId);
-    return;
-  }
-
-  if (post && loggedInUser && loggedInUser.id === post.user_id) {
-    if (typeof openConfirmModal === 'function') {
-      openConfirmModal();
+    if (!selectedPostId) {
+        showToast();
+        return;
     }
-    return;
-  }
 
-  if (typeof submitApplication === 'function') {
-    await submitApplication(true);
-    return;
-  }
+    const post = memoryPosts.find(p => p.id === selectedPostId);
+    if (post && appliedPostIds.has(post.id)) {
+        updateHoldButtonState(selectedPostId);
+        return;
+    }
 
-  showToast();
+    if (post && loggedInUser && loggedInUser.id === post.user_id) {
+        if (typeof openConfirmModal === 'function') {
+            openConfirmModal();
+        }
+        return;
+    }
+
+    if (typeof submitApplication === 'function') {
+        await submitApplication(true);
+        return;
+    }
+
+    showToast();
 }
 
 function showToast(message = "การสมัครสำเร็จ! ติดตามการสมัครที่ปุ่ม Menu ทางด้านซ้ายบนของหน้าหลักได้เลย!", duration = 3000) {
-  const toastMessage = document.getElementById('toastMessage');
-  if (!toast) return;
+    const toastMessage = document.getElementById('toastMessage');
+    if (!toast) return;
 
-  if (toastTimer) clearTimeout(toastTimer);
+    if (toastTimer) clearTimeout(toastTimer);
 
-  if (toastMessage) {
-    toastMessage.innerText = message;
-  }
+    if (toastMessage) {
+        toastMessage.innerText = message;
+    }
 
-  toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
-  toast.classList.add('opacity-100', 'scale-100');
+    toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+    toast.classList.add('opacity-100', 'scale-100');
 
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('opacity-100', 'scale-100');
-    toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
-  }, duration);
+    toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'scale-100');
+        toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
+    }, duration);
 }
 
 if (btn) {
-  btn.addEventListener('mousedown', startHold);
-  btn.addEventListener('mouseup', resetHold);
-  btn.addEventListener('mouseleave', resetHold);
+    btn.addEventListener('mousedown', startHold);
+    btn.addEventListener('mouseup', resetHold);
+    btn.addEventListener('mouseleave', resetHold);
 
-  btn.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    startHold();
-  });
-  btn.addEventListener('touchend', resetHold);
-  btn.addEventListener('touchcancel', resetHold);
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startHold();
+    });
+    btn.addEventListener('touchend', resetHold);
+    btn.addEventListener('touchcancel', resetHold);
 }
 
 // ==========================================
@@ -178,9 +179,15 @@ async function handleSignUp(event) {
     const usernameInput = document.getElementById('Username');
     const email = document.getElementById('signUpEmail').value.trim();
     const password = document.getElementById('signUpPass').value.trim();
-    const avatarFile = document.getElementById('profileImageFile').files[0];
+    const profileFileInput = document.getElementById('profileImageFile');
+    const avatarFiles = profileFileInput ? profileFileInput.files : [];
     const signUpBtn = document.getElementById('signUpBtn');
 
+    if (avatarFiles.length > 1) {
+        return showToast("สามารถอัปโหลดรูปโปรไฟล์ได้เพียง 1 ไฟล์เท่านั้น!");
+    }
+
+    const avatarFile = avatarFiles[0];
     const chosenUsername = usernameInput ? usernameInput.value.trim() : email.split('@')[0];
 
     if (password.length < 6) {
@@ -206,24 +213,46 @@ async function handleSignUp(event) {
     }
 
     let avatarUrl = defaultAvatar;
+
     if (avatarFile && authData.user) {
         const fileExt = avatarFile.name.split('.').pop();
-        const filePath = `avatars/${authData.user.id}.${fileExt}`;
-        const { error: uploadError } = await supabaseClient.storage.from('activity-images').upload(filePath, avatarFile);
-        
-        if (!uploadError) {
-            const { data: urlData } = supabaseClient.storage.from('activity-images').getPublicUrl(filePath);
+        const fileName = `${authData.user.id}_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('profile-picture')
+            .upload(fileName, avatarFile, { 
+                cacheControl: '3600', 
+                upsert: true 
+            });
+
+        if (uploadError) {
+            console.error("Avatar Upload Error:", uploadError.message);
+        } else {
+            const { data: urlData } = supabaseClient.storage
+                .from('profile-picture')
+                .getPublicUrl(fileName);
+
             avatarUrl = urlData.publicUrl;
         }
     }
 
-    if(authData.user) {
-        await supabaseClient
+    if (authData.user) {
+        const { error: profileError } = await supabaseClient
             .from('profiles')
-            .upsert([{ id: authData.user.id, username: chosenUsername, avatar_url: avatarUrl }], { onConflict: 'id' });
+            .upsert([
+                { 
+                    id: authData.user.id, 
+                    username: chosenUsername, 
+                    avatar_url: avatarUrl 
+                }
+            ], { onConflict: 'id' });
+
+        if (profileError) {
+            console.error("Profile Upsert Error:", profileError.message);
+        }
     }
     
-    showToast("สมัครสมาชิกสำเร็จ! คุณสามารถใช้บัญชีนี้ล็อกอินเข้าสู่ระบบได้ทันที");
+    showToast("สมัครสมาชิกสำเร็จ!");
     signUpBtn.innerText = "ลงทะเบียนสร้างบัญชี (Confirm Sign Up)";
     signUpBtn.disabled = false;
     toggleAuthMode('login');
@@ -280,7 +309,7 @@ function trackAuthSession() {
             try {
                 const { data: profileData, error: profileError } = await supabaseClient
                     .from('profiles')
-                    .select('username')
+                    .select('username, avatar_url')
                     .eq('id', loggedInUser.id)
                     .maybeSingle();
 
@@ -290,6 +319,13 @@ function trackAuthSession() {
                     document.getElementById('userDisplay').innerText = profileData && profileData.username 
                         ? profileData.username 
                         : loggedInUser.email.split('@')[0];
+                }
+
+                const avatarImg = document.getElementById('userAvatarDisplay');
+                if (avatarImg) {
+                    avatarImg.src = profileData && profileData.avatar_url 
+                        ? profileData.avatar_url 
+                        : defaultAvatar;
                 }
             } catch (err) {
                 console.error("Error fetching custom profile data:", err.message);
@@ -344,6 +380,93 @@ async function ensureUserProfile(userId = loggedInUser?.id) {
     } catch (err) {
         console.error('Error ensuring user profile:', err.message);
         return false;
+    }
+}
+
+// ==========================================
+// PROFILE EDIT & UPDATE MODAL FUNCTIONS
+// ==========================================
+
+async function openProfileModal() {
+    if (!loggedInUser) return showToast("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+
+    const modal = document.getElementById('profileModal');
+    const usernameInput = document.getElementById('editUsername');
+
+    if (!modal) return;
+
+    const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('username')
+        .eq('id', loggedInUser.id)
+        .maybeSingle();
+
+    if (usernameInput) {
+        usernameInput.value = profile?.username || loggedInUser.email.split('@')[0];
+    }
+
+    modal.classList.remove('hidden');
+}
+
+async function handleUpdateProfile(event) {
+    event.preventDefault();
+    if (!loggedInUser || !supabaseClient) return;
+
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const usernameInput = document.getElementById('editUsername');
+    const avatarInput = document.getElementById('editAvatarFile');
+
+    const newUsername = usernameInput ? usernameInput.value.trim() : "";
+    const avatarFile = avatarInput?.files[0];
+
+    saveBtn.innerText = "กำลังบันทึก...";
+    saveBtn.disabled = true;
+
+    let avatarUrl = null;
+
+    if (avatarFile) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const fileName = `${loggedInUser.id}_${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('profile-picture')
+            .upload(fileName, avatarFile, { cacheControl: '3600', upsert: true });
+
+        if (!uploadError) {
+            const { data: urlData } = supabaseClient.storage
+                .from('profile-picture')
+                .getPublicUrl(fileName);
+            avatarUrl = urlData.publicUrl;
+        } else {
+            console.error("Avatar update error:", uploadError.message);
+        }
+    }
+
+    const updatePayload = { updated_at: new Date() };
+    if (newUsername) updatePayload.username = newUsername;
+    if (avatarUrl) updatePayload.avatar_url = avatarUrl;
+
+    const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update(updatePayload)
+        .eq('id', loggedInUser.id);
+
+    saveBtn.innerText = "บันทึก";
+    saveBtn.disabled = false;
+
+    if (profileError) {
+        showToast("แก้ไขโปรไฟล์ไม่สำเร็จ: " + profileError.message);
+    } else {
+        showToast("อัปเดตข้อมูลโปรไฟล์เรียบร้อยแล้ว!");
+        
+        if (newUsername && document.getElementById('userDisplay')) {
+            document.getElementById('userDisplay').innerText = newUsername;
+        }
+        if (avatarUrl && document.getElementById('userAvatarDisplay')) {
+            document.getElementById('userAvatarDisplay').src = avatarUrl;
+        }
+
+        closeModal('profileModal');
     }
 }
 
@@ -431,7 +554,15 @@ async function handleCreatePost(event) {
     const peopleLimit = parseInt(document.getElementById('postLimit').value) || 3;
     const budget = document.getElementById('postBudget').value.trim();
     const location = document.getElementById('postLocation').value.trim();
-    const imageFile = document.getElementById('postImageFile').files[0];
+
+    const postFileInput = document.getElementById('postImageFile');
+    const imageFiles = postFileInput ? postFileInput.files : [];
+
+    if (imageFiles.length > 1) {
+        return showToast("สามารถอัปโหลดรูปกิจกรรมได้เพียง 1 ไฟล์เท่านั้น!");
+    }
+
+    const imageFile = imageFiles[0];
 
     submitBtn.innerText = "กำลังประกาศ...";
     submitBtn.disabled = true;
@@ -441,7 +572,7 @@ async function handleCreatePost(event) {
     if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-        const filePath = `posts/${fileName}`;
+        const filePath = `${fileName}`;
 
         const { error: uploadError } = await supabaseClient.storage
             .from('activity-images')
@@ -452,6 +583,8 @@ async function handleCreatePost(event) {
                 .from('activity-images')
                 .getPublicUrl(filePath);
             imageUrl = urlData.publicUrl;
+        } else {
+            console.error("Activity Image Upload Error:", uploadError.message);
         }
     }
 
@@ -697,7 +830,6 @@ async function openRosterModal(postId) {
     rosterList.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">กำลังโหลดข้อมูลผู้สมัคร...</p>`;
     document.getElementById('rosterModal').classList.remove('hidden');
 
-    // 1. Fetch applications
     const { data: apps, error } = await supabaseClient
         .from('applications')
         .select('id, status, user_id')
@@ -713,7 +845,6 @@ async function openRosterModal(postId) {
         return;
     }
 
-    // 2. Safely fetch profiles for user IDs
     const userIds = apps.map(app => app.user_id);
     const { data: profiles } = await supabaseClient
         .from('profiles')
@@ -722,7 +853,6 @@ async function openRosterModal(postId) {
 
     const profileMap = new Map((profiles || []).map(p => [p.id, p]));
 
-    // 3. Render roster cards
     rosterList.innerHTML = '';
     apps.forEach(app => {
         const profile = profileMap.get(app.user_id);
@@ -818,218 +948,114 @@ function toggleEditTypeFields() {
     const typeEl = document.getElementById('editPostType');
     const commField = document.getElementById('editCommissionField');
     const locField = document.getElementById('editLocationField');
-    
-    if(!typeEl) return;
+
+    if (!typeEl) return;
     const type = typeEl.value;
 
-    if(commField) commField.classList.toggle('hidden', type !== 'Commission');
-    if(locField) locField.classList.toggle('hidden', type !== 'Meet-up');
+    if (commField) commField.classList.toggle('hidden', type !== 'Commission');
+    if (locField) locField.classList.toggle('hidden', type !== 'Meet-up');
 }
-
-function toggleFilterMenu() {
-    let menu = document.getElementById('filterDropdownMenu');
-    
-    if (!menu) {
-        const filterBtn = document.getElementById('filterBtn');
-        if (!filterBtn) return;
-
-        menu = document.createElement('div');
-        menu.id = 'filterDropdownMenu';
-        menu.className = "absolute left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 p-3 flex flex-col gap-1.5 z-50 w-52 transition-all duration-200";
-        
-        const categories = [
-            { label: "✨ ทั้งหมด / All", value: "All" },
-            { label: "🤝 Cooperation", value: "Cooperation" },
-            { label: "💰 Commission", value: "Commission" },
-            { label: "🌱 Volunteer", value: "Volunteer" },
-            { label: "📍 Meet-up", value: "Meet-up" }
-        ];
-
-        categories.forEach(cat => {
-            const btn = document.createElement('button');
-            btn.className = `w-full text-left px-4 py-2.5 rounded-xl font-bold text-sm transition-all text-gray-700 hover:bg-orange-50 hover:text-orange-600 cursor-pointer ${currentFilterType === cat.value ? 'bg-orange-50 text-orange-600' : ''}`;
-            btn.innerText = cat.label;
-            btn.onclick = function() {
-                currentFilterType = cat.value;
-                filterBtn.innerHTML = `<i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: ${cat.value}`;
-                renderFilteredPosts();
-                menu.classList.add('hidden');
-            };
-            menu.appendChild(btn);
-        });
-
-        filterBtn.parentNode.appendChild(menu);
-    } else {
-        menu.classList.toggle('hidden');
-        
-        const buttons = menu.querySelectorAll('button');
-        const categories = ["All", "Cooperation", "Commission", "Volunteer", "Meet-up"];
-        buttons.forEach((b, i) => {
-            if (currentFilterType === categories[i]) {
-                b.classList.add('bg-orange-50', 'text-orange-600');
-            } else {
-                b.classList.remove('bg-orange-50', 'text-orange-600');
-            }
-        });
-    }
-}
-
-function openHowToStart() {
-    const modal = document.getElementById('howToStartModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-    }
-}
-
-let selectedPostId = null;
 
 function openDetailsModal(postId) {
+    selectedPostId = postId;
     const post = memoryPosts.find(p => p.id === postId);
     if (!post) return;
 
-    selectedPostId = postId;
+    const modalTitle = document.getElementById('detailTitle');
+    const modalDesc = document.getElementById('detailDesc');
+    const modalType = document.getElementById('detailType');
+    const modalImage = document.getElementById('detailImage');
+    const modalBudget = document.getElementById('detailBudget');
+    const modalLocation = document.getElementById('detailLocation');
 
-    document.getElementById("modalTitle").innerText = post.title;
-    document.getElementById("modalDesc").innerText = post.description;
-    document.getElementById("modalImage").src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+    if (modalTitle) modalTitle.innerText = post.title;
+    if (modalDesc) modalDesc.innerText = post.description;
+    if (modalType) modalType.innerText = post.type;
+    if (modalImage) modalImage.src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+    
+    if (modalBudget) {
+        modalBudget.innerText = post.budget ? `ค่าตอบแทน: ${post.budget}` : '';
+        modalBudget.classList.toggle('hidden', !post.budget);
+    }
+    if (modalLocation) {
+        modalLocation.innerText = post.location ? `สถานที่: ${post.location}` : '';
+        modalLocation.classList.toggle('hidden', !post.location);
+    }
 
     updateHoldButtonState(postId);
-    document.getElementById("detailsModal").classList.remove("hidden");
+    const modal = document.getElementById('detailsModal');
+    if (modal) modal.classList.remove('hidden');
 }
 
-function openConfirmModal() {
-    const post = memoryPosts.find(p => p.id === selectedPostId);
-    if (!post) return;
-
-    if (loggedInUser && loggedInUser.id === post.user_id) {
-        document.getElementById("ownerWarningModal").classList.remove("hidden");
+async function submitApplication(fromHold = false) {
+    if (!loggedInUser || !selectedPostId) {
+        showToast("กรุณาเข้าสู่ระบบก่อนสมัคร");
         return;
     }
 
-    document.getElementById("confirmTitle").innerText = post.title;
-    document.getElementById("confirmImage").src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
+    const post = memoryPosts.find(p => p.id === selectedPostId);
+    if (!post) return;
 
-    document.getElementById("confirmModal").classList.remove("hidden");
-}
-
-async function submitApplication(showSuccessToast = false) {
-    if (!supabaseClient) return false;
-    try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-
-        if (!user) {
-            showToast("กรุณาเข้าสู่ระบบก่อนสมัคร");
-            return false;
-        }
-
-        const post = memoryPosts.find(p => p.id === selectedPostId);
-        if (!post) return false;
-
-        if (post.joined_count >= post.people_limit) {
-            showToast("ขออภัย กิจกรรมนี้เต็มแล้ว!");
-            return false;
-        }
-
-        const profileReady = await ensureUserProfile(user.id);
-        if (!profileReady) {
-            showToast("ไม่สามารถสร้างข้อมูลโปรไฟล์ผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง");
-            return false;
-        }
-
-        const { data: existing } = await supabaseClient
-            .from("applications")
-            .select("*")
-            .eq("post_id", selectedPostId)
-            .eq("user_id", user.id)
-            .maybeSingle(); 
-
-        if (existing) {
-            appliedPostIds.add(selectedPostId);
-            updateHoldButtonState(selectedPostId);
-            closeModal("confirmModal");
-            closeModal("detailsModal");
-            fetchPosts();
-            return true;
-        }
-
-        const { error: insertError } = await supabaseClient
-            .from("applications")
-            .insert([
-                {
-                    post_id: selectedPostId,
-                    user_id: user.id,
-                    status: 'pending'
-                }
-            ]);
-
-        if (insertError) throw insertError;
-
-        appliedPostIds.add(selectedPostId);
-
-        closeModal("confirmModal");
-        closeModal("detailsModal");
-        fetchPosts();
-
-        if (showSuccessToast) {
-            showToast();
-        } else {
-            showToast("สมัครสำเร็จ! รอเจ้าของโพสต์อนุมัติ");
-        }
-
-        return true;
-
-    } catch (err) {
-        console.error(err);
-        showToast("เกิดข้อผิดพลาด: " + err.message);
-        return false;
+    if (appliedPostIds.has(post.id)) {
+        showToast("คุณได้สมัครเข้าร่วมกิจกรรมนี้ไปแล้ว!");
+        return;
     }
+
+    const { error: appError } = await supabaseClient
+        .from('applications')
+        .insert([{ post_id: selectedPostId, user_id: loggedInUser.id, status: 'pending' }]);
+
+    if (appError) {
+        showToast("สมัครไม่สำเร็จ: " + appError.message);
+        return;
+    }
+
+    const newCount = (post.joined_count || 0) + 1;
+    await supabaseClient
+        .from('posts')
+        .update({ joined_count: newCount })
+        .eq('id', selectedPostId);
+
+    appliedPostIds.add(selectedPostId);
+    updateHoldButtonState(selectedPostId);
+    showToast("ส่งใบสมัครเรียบร้อยแล้ว!");
+    closeModal('detailsModal');
+    fetchPosts();
 }
 
-function openSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('backdrop');
-    if (sidebar) sidebar.classList.remove('-translate-x-full');
-    if (backdrop) backdrop.classList.remove('hidden');
+function openConfirmModal() {
+    showToast("คุณเป็นเจ้าของโพสต์นี้ ไม่สามารถสมัครได้");
 }
 
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
-    const backdrop = document.getElementById('backdrop');
     if (sidebar) sidebar.classList.add('-translate-x-full');
-    if (backdrop) backdrop.classList.add('hidden');
+}
+
+function filterPosts(type) {
+    currentFilterType = type;
+    renderFilteredPosts();
 }
 
 // ==========================================
-// 7. INITIALIZER ON WINDOW LOAD
+// 7. INITIALIZATION
 // ==========================================
-window.onload = function() {
+
+document.addEventListener('DOMContentLoaded', () => {
     trackAuthSession();
 
-    const createForm = document.getElementById("createPostForm");
-    if (createForm) createForm.addEventListener("submit", handleCreatePost);
+    const createForm = document.getElementById('createPostForm');
+    if (createForm) createForm.addEventListener('submit', handleCreatePost);
 
-    const editForm = document.getElementById("editPostForm");
-    if (editForm) editForm.addEventListener("submit", handleEditPost);
+    const editForm = document.getElementById('editPostForm');
+    if (editForm) editForm.addEventListener('submit', handleEditPost);
 
-    const loginForm = document.getElementById("loginForm");
-    if (loginForm) loginForm.addEventListener("submit", handleLogin);
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) loginForm.addEventListener('submit', handleLogin);
 
-    const signUpForm = document.getElementById("signUpForm");
-    if (signUpForm) signUpForm.addEventListener("submit", handleSignUp);
+    const signUpForm = document.getElementById('signUpForm');
+    if (signUpForm) signUpForm.addEventListener('submit', handleSignUp);
 
-    document.addEventListener('click', function(event) {
-        const menu = document.getElementById('filterDropdownMenu');
-        const filterBtn = document.getElementById('filterBtn');
-        if (menu && filterBtn && !filterBtn.contains(event.target) && !menu.contains(event.target)) {
-            menu.classList.add('hidden');
-        }
-    });
-
-    const backdrop = document.getElementById('backdrop');
-    const openBtn = document.getElementById('open-btn');
-    const closeBtn = document.getElementById('close-btn');
-
-    if (openBtn) openBtn.addEventListener('click', openSidebar);
-    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-    if (backdrop) backdrop.addEventListener('click', closeSidebar);
-};
+    const profileForm = document.getElementById('updateProfileForm');
+    if (profileForm) profileForm.addEventListener('submit', handleUpdateProfile);
+});

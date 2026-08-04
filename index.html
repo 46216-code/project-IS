@@ -48,18 +48,19 @@
             </svg>
         </button>
         
-        <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0">
+        <!-- Interactive Profile Section -->
+        <div class="flex items-center gap-4 border-l-2 border-orange-200/60 pl-6 flex-shrink-0 cursor-pointer" onclick="openProfileModal()">
             <div class="text-right hidden sm:block">
                 <p class="text-orange-950 font-bold text-base tracking-tight flex items-center gap-1.5 justify-end">
                     <span id="userDisplay">User</span>
                 </p>
-                <span onclick="switchTab('my')" class="flex items-center justify-end gap-1.5 text-orange-500 hover:text-orange-600 text-xs font-bold cursor-pointer transition-all active:scale-95">
+                <span onclick="event.stopPropagation(); switchTab('my');" class="flex items-center justify-end gap-1.5 text-orange-500 hover:text-orange-600 text-xs font-bold cursor-pointer transition-all active:scale-95">
                     <i class="fa-solid fa-rectangle-list"></i> My post
                 </span>
             </div>
             
-            <div onclick="handleLogout()" title="ออกจากระบบ" class="w-12 h-12 rounded-full bg-[#cbd5e1] flex items-end justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:bg-[#b8c2cc] flex-shrink-0">
-                <i class="fa-solid fa-user text-white text-3xl translate-y-1"></i>
+            <div title="คลิกเพื่อแก้ไขโปรไฟล์" class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center cursor-pointer transition-all duration-200 shadow-md active:scale-95 overflow-hidden border border-orange-200/40 hover:opacity-90 flex-shrink-0">
+                <img id="userAvatarDisplay" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" alt="Profile Picture" class="w-full h-full object-cover">
             </div>
         </div>
     </header>
@@ -131,6 +132,31 @@
         </main>
     </div>
 
+    <!-- Edit Profile Modal -->
+    <div id="profileModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all">
+        <div class="bg-white rounded-[32px] max-w-md w-full p-8 shadow-2xl border border-gray-100 relative">
+            <button onclick="closeModal('profileModal')" class="absolute top-6 right-6 text-gray-400 hover:text-gray-900 text-2xl font-bold cursor-pointer">&times;</button>
+            <h2 class="text-gray-900 text-2xl font-extrabold mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-user-gear text-orange-500"></i> แก้ไขโปรไฟล์
+            </h2>
+            
+            <form id="updateProfileForm" class="space-y-4 text-sm">
+                <div>
+                    <label class="block text-gray-700 font-bold mb-1">ชื่อผู้ใช้งาน (Username)</label>
+                    <input type="text" id="editUsername" required class="w-full border border-gray-200 rounded-2xl p-3.5 focus:outline-none focus:border-orange-400">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-bold mb-1">เปลี่ยนรูปโปรไฟล์ (Avatar)</label>
+                    <input type="file" id="editAvatarFile" accept="image/*" class="w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-600 hover:file:bg-orange-100 cursor-pointer">
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeModal('profileModal')" class="bg-gray-100 text-gray-600 px-6 py-2.5 rounded-full font-bold cursor-pointer">ยกเลิก</button>
+                    <button type="submit" id="saveProfileBtn" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-full font-bold cursor-pointer">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Create Post Modal -->
     <div id="createModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
         <div class="bg-white rounded-[32px] max-w-xl w-full p-8 md:p-10 shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all max-h-[90vh] overflow-y-auto custom-scroll">
@@ -143,7 +169,7 @@
             </h2>
             <form id="createPostForm" class="space-y-5 text-sm">
                 <div>
-                    <label class="block text-gray-700 font-bold mb-2">รูปภาพประกอบกิจกรรม</label>
+                    <label class="block text-gray-700 font-bold mb-2">รูปภาพประกอบกิจกรรม (Single File Only)</label>
                     <div class="w-full border-2 border-dashed border-orange-100 rounded-2xl p-4 hover:border-orange-300 transition-colors bg-orange-50/10">
                         <input type="file" id="postImageFile" accept="image/*" class="w-full text-gray-500 file:mr-4 file:py-2 file:px-5 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-gray-900 file:text-white hover:file:bg-gray-800 cursor-pointer">
                     </div>
@@ -259,17 +285,21 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <div class="relative h-72 bg-gray-100">
-                <img id="modalImage" class="w-full h-full object-cover" src="" alt="Activity Banner">
+                <img id="detailImage" class="w-full h-full object-cover" src="" alt="Activity Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent"></div>
                 <div class="absolute bottom-6 left-8 right-8">
-                    <span class="inline-block bg-orange-400 text-white font-bold tracking-wide uppercase text-xs px-3 py-1.5 rounded-lg mb-3 shadow-md shadow-orange-500/10">Active Event</span>
-                    <h2 id="modalTitle" class="text-white text-3xl font-extrabold tracking-tight drop-shadow-sm"></h2>
+                    <span id="detailType" class="inline-block bg-orange-400 text-white font-bold tracking-wide uppercase text-xs px-3 py-1.5 rounded-lg mb-3 shadow-md shadow-orange-500/10">Active Event</span>
+                    <h2 id="detailTitle" class="text-white text-3xl font-extrabold tracking-tight drop-shadow-sm"></h2>
                 </div>
             </div>
             <div class="p-8 md:p-10">
                 <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">รายละเอียดกิจกรรม</h3>
-                <p id="modalDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line"></p>
-                <div class="mt-10 pt-6 border-t border-gray-100 flex items-center justify-between">
+                <p id="detailDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line"></p>
+                <div class="mt-2 space-y-1">
+                    <p id="detailBudget" class="text-green-600 font-bold text-sm hidden"></p>
+                    <p id="detailLocation" class="text-blue-600 font-bold text-sm hidden"></p>
+                </div>
+                <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
                     <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
                     <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
                         <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
@@ -359,9 +389,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
-<!-- MINUTES WASTED MAKING THE PROFILE PICTURE: 90
-    To skype,
-        Please make sure that the profile picture works! Thank you!
-                            -Krittin
--->
