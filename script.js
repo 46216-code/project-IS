@@ -1077,3 +1077,354 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileForm = document.getElementById('updateProfileForm');
     if (profileForm) profileForm.addEventListener('submit', handleUpdateProfile);
 });
+// ==========================================
+// 8. SIDEBAR & NAVIGATION LINK CONTROLS
+// ==========================================
+
+function openSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    if (sidebar) sidebar.classList.remove('-translate-x-full');
+    if (backdrop) backdrop.classList.remove('hidden');
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const backdrop = document.getElementById('backdrop');
+    if (sidebar) sidebar.classList.add('-translate-x-full');
+    if (backdrop) backdrop.classList.add('hidden');
+}
+
+function toggleFilterMenu() {
+    const types = ["All", "Cooperation", "Commission", "Volunteer", "Meet-up"];
+    const currentIndex = types.indexOf(currentFilterType);
+    const nextIndex = (currentIndex + 1) % types.length;
+    currentFilterType = types[nextIndex];
+
+    const filterBtn = document.getElementById('filterBtn');
+    if (filterBtn) {
+        filterBtn.innerHTML = `<i class="fa-solid fa-filter text-white/90 text-xs"></i> Filter: ${currentFilterType}`;
+    }
+
+    renderFilteredPosts();
+}
+
+function openHowToStart() {
+    const modal = document.getElementById('howToStartModal');
+    if (modal) modal.classList.remove('hidden');
+}
+
+// Bind Sidebar Trigger Events on DOM Load
+document.addEventListener('DOMContentLoaded', () => {
+    const openBtn = document.getElementById('open-btn');
+    const closeBtn = document.getElementById('close-btn');
+    const backdrop = document.getElementById('backdrop');
+
+    if (openBtn) openBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (backdrop) backdrop.addEventListener('click', closeSidebar);
+});
+
+// Variable to store current roster state
+let currentRosterPostId = null;
+let currentRosterTab = 'pending'; // 'pending' or 'accepted'
+let activeApplicationsCache = [];
+
+// ==========================================
+// 1. REQ #2 & #3: SUBMIT APPLICATION
+// Count only updates on approval. Submitting stays pending.
+// ==========================================
+async function submitApplication(fromHold = false) {
+    if (!loggedInUser || !selectedPostId) {
+        showToast("กรุณาเข้าสู่ระบบก่อนสมัคร");
+        return;
+    }
+
+    const post = memoryPosts.find(p => p.id === selectedPostId);
+    if (!post) return;
+
+    if (appliedPostIds.has(post.id)) {
+        showToast("คุณได้สมัครเข้าร่วมกิจกรรมนี้ไปแล้ว!");
+        return;
+    }
+
+    const { error: appError } = await supabaseClient
+        .from('applications')
+        .insert([{ post_id: selectedPostId, user_id: loggedInUser.id, status: 'pending' }]);
+
+    if (appError) {
+        showToast("สมัครไม่สำเร็จ: " + appError.message);
+        return;
+    }
+
+    appliedPostIds.add(selectedPostId);
+    updateHoldButtonState(selectedPostId);
+    showToast("ส่งใบสมัครเรียบร้อยแล้ว!");
+    closeModal('detailsModal');
+    await fetchPosts();
+}
+
+// ==========================================
+// 2. REQ #1: ENFORCE LIMIT ON EDITING POSTS
+// Max limit cannot be set smaller than current accepted count (n)
+// ==========================================
+function openEditModal(postId) {
+    const post = memoryPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const limitInput = document.getElementById('editPostLimit');
+
+    document.getElementById('editPostId').value = post.id;
+    document.getElementById('editPostTitle').value = post.title;
+    document.getElementById('editPostDesc').value = post.description;
+    document.getElementById('editPostType').value = post.type;
+    
+    // Set minimum allowed limit to current accepted count
+    if (limitInput) {
+        limitInput.value = post.people_limit;
+        limitInput.min = post.joined_count || 0; 
+    }
+
+    document.getElementById('editPostBudget').value = post.budget || '';
+    document.getElementById('editPostLocation').value = post.location || '';
+
+    toggleEditTypeFields();
+    document.getElementById('editModal').classList.remove('hidden');
+}
+
+async function handleEditPost(event) {
+    event.preventDefault();
+    if (!supabaseClient || !loggedInUser) return;
+
+    const postId = parseInt(document.getElementById('editPostId').value, 10);
+    const post = memoryPosts.find(p => p.id === postId);
+    const newPeopleLimit = parseInt(document.getElementById('editPostLimit').value) || 1;
+
+    // Strict validation check
+    if (post && newPeopleLimit < post.joined_count) {
+        return showToast(`ไม่สามารถตั้งจำนวนรับน้อยกว่าคนที่ตอบรับแล้ว (${post.joined_count} คน) ได้`);
+    }
+
+    const title = document.getElementById('editPostTitle').value.trim();
+    const description = document.getElementById('editPostDesc').value.trim();
+    const type = document.getElementById('editPostType').value;
+    const budget = document.getElementById('editPostBudget').value.trim();
+    const location = document.getElementById('editPostLocation').value.trim();
+
+    const { error } = await supabaseClient
+        .from('posts')
+        .update({
+            title,
+            description,
+            type,
+            people_limit: newPeopleLimit,
+            budget: type === 'Commission' ? budget : null,
+            location: type === 'Meet-up' ? location : null
+        })
+        .eq('id', postId)
+        .eq('user_id', loggedInUser.id);
+
+    if (error) {
+        showToast("แก้ไขโพสต์ไม่สำเร็จ: " + error.message);
+    } else {
+        showToast("บันทึกการแก้ไขโพสต์เรียบร้อย!");
+        closeModal('editModal');
+        fetchPosts();
+    }
+}
+
+// ==========================================
+// 3. REQ #4 & #5: TABS, DELETED FILTERS & BATCH ACTIONS
+// ==========================================
+async function openRosterModal(postId) {
+    if (!supabaseClient) return;
+    currentRosterPostId = postId;
+
+    const rosterList = document.getElementById('rosterList');
+    if (!rosterList) return;
+
+    rosterList.innerHTML = `<p class="text-center text-gray-400 text-sm py-4">กำลังโหลดข้อมูลผู้สมัคร...</p>`;
+    document.getElementById('rosterModal').classList.remove('hidden');
+
+    // Fetch all application records for this post
+    const { data: apps, error } = await supabaseClient
+        .from('applications')
+        .select('id, status, user_id')
+        .eq('post_id', postId);
+
+    if (error) {
+        rosterList.innerHTML = `<p class="text-center text-red-500 text-sm py-4">เกิดข้อผิดพลาด: ${error.message}</p>`;
+        return;
+    }
+
+    activeApplicationsCache = apps || [];
+
+    // Update Counts in Tab Headers
+    const pendingApps = activeApplicationsCache.filter(a => a.status === 'pending');
+    const acceptedApps = activeApplicationsCache.filter(a => a.status === 'accepted');
+
+    document.getElementById('pendingCount').innerText = pendingApps.length;
+    document.getElementById('acceptedCount').innerText = acceptedApps.length;
+
+    switchRosterTab(currentRosterTab);
+}
+
+function switchRosterTab(tab) {
+    currentRosterTab = tab;
+
+    const tabPending = document.getElementById('rosterTabPending');
+    const tabAccepted = document.getElementById('rosterTabAccepted');
+
+    if (tab === 'pending') {
+        tabPending.className = "pb-2 text-sm font-bold border-b-2 border-orange-500 text-orange-500 cursor-pointer";
+        tabAccepted.className = "pb-2 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-600 cursor-pointer";
+    } else {
+        tabAccepted.className = "pb-2 text-sm font-bold border-b-2 border-orange-500 text-orange-500 cursor-pointer";
+        tabPending.className = "pb-2 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-600 cursor-pointer";
+    }
+
+    renderRosterList();
+}
+
+async function renderRosterList() {
+    const rosterList = document.getElementById('rosterList');
+    const batchContainer = document.getElementById('batchButtonsContainer');
+    if (!rosterList) return;
+
+    // REQ #4: Filter out declined/removed people from pending list
+    const filteredApps = activeApplicationsCache.filter(a => a.status === currentRosterTab);
+
+    // REQ #5: Render Batch Buttons based on active tab
+    if (batchContainer) {
+        if (currentRosterTab === 'pending') {
+            batchContainer.innerHTML = `
+                <button onclick="batchUpdateApplications('accept_all')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-full font-bold cursor-pointer">
+                    <i class="fa-solid fa-check-double"></i> Accept All
+                </button>
+                <button onclick="batchUpdateApplications('deny_all')" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-full font-bold cursor-pointer">
+                    <i class="fa-solid fa-ban"></i> Deny All
+                </button>
+            `;
+        } else {
+            batchContainer.innerHTML = `
+                <button onclick="batchUpdateApplications('remove_all')" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded-full font-bold cursor-pointer">
+                    <i class="fa-solid fa-user-minus"></i> Remove All
+                </button>
+            `;
+        }
+    }
+
+    if (filteredApps.length === 0) {
+        rosterList.innerHTML = `<p class="text-center text-gray-400 text-sm py-8">ไม่มีรายการในหมวดนี้</p>`;
+        return;
+    }
+
+    const userIds = filteredApps.map(app => app.user_id);
+    const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    rosterList.innerHTML = '';
+    filteredApps.forEach(app => {
+        const profile = profileMap.get(app.user_id);
+        const username = profile?.username || 'ผู้ใช้งาน';
+        const avatar = profile?.avatar_url || defaultAvatar;
+
+        const card = document.createElement('div');
+        card.className = "flex items-center justify-between p-3.5 bg-gray-50 rounded-2xl border border-gray-100";
+
+        let actionsHtml = '';
+        if (currentRosterTab === 'pending') {
+            actionsHtml = `
+                <div class="flex items-center gap-2">
+                    <button onclick="updateApplicationStatus('${app.id}', 'accepted')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer">
+                        <i class="fa-solid fa-check"></i> Accept
+                    </button>
+                    <button onclick="updateApplicationStatus('${app.id}', 'declined')" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer">
+                        <i class="fa-solid fa-xmark"></i> Deny
+                    </button>
+                </div>`;
+        } else {
+            // REQ #3: Removing/Declining lowers the count automatically
+            actionsHtml = `
+                <button onclick="updateApplicationStatus('${app.id}', 'declined')" class="bg-rose-500 hover:bg-rose-600 text-white px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer">
+                    <i class="fa-solid fa-user-minus"></i> Remove
+                </button>`;
+        }
+
+        card.innerHTML = `
+            <div class="flex items-center gap-3">
+                <img src="${avatar}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800">${username}</h4>
+                </div>
+            </div>
+            ${actionsHtml}
+        `;
+        rosterList.appendChild(card);
+    });
+}
+
+// Update individual status
+async function updateApplicationStatus(applicationId, newStatus) {
+    if (!supabaseClient) return;
+
+    const { error } = await supabaseClient
+        .from('applications')
+        .update({ status: newStatus })
+        .eq('id', applicationId);
+
+    if (error) {
+        showToast("เกิดข้อผิดพลาด: " + error.message);
+    } else {
+        showToast("อัปเดตสถานะผู้สมัครเรียบร้อยแล้ว");
+        await fetchPosts();
+        openRosterModal(currentRosterPostId);
+    }
+}
+
+// REQ #5: Batch Action Handlers (Accept All, Deny All, Remove All)
+async function batchUpdateApplications(action) {
+    if (!supabaseClient || !currentRosterPostId) return;
+
+    let targetIds = [];
+    let targetStatus = '';
+
+    if (action === 'accept_all') {
+        const post = memoryPosts.find(p => p.id === currentRosterPostId);
+        const pendingApps = activeApplicationsCache.filter(a => a.status === 'pending');
+        
+        if (post && (post.joined_count + pendingApps.length) > post.people_limit) {
+            return showToast("ไม่สามารถตอบรับทั้งหมดได้ เนื่องจากเกินจำนวนที่เปิดรับ");
+        }
+
+        targetIds = pendingApps.map(a => a.id);
+        targetStatus = 'accepted';
+    } else if (action === 'deny_all') {
+        targetIds = activeApplicationsCache.filter(a => a.status === 'pending').map(a => a.id);
+        targetStatus = 'declined';
+    } else if (action === 'remove_all') {
+        targetIds = activeApplicationsCache.filter(a => a.status === 'accepted').map(a => a.id);
+        targetStatus = 'declined';
+    }
+
+    if (targetIds.length === 0) {
+        return showToast("ไม่มีรายการให้ทำรายการ");
+    }
+
+    const { error } = await supabaseClient
+        .from('applications')
+        .update({ status: targetStatus })
+        .in('id', targetIds);
+
+    if (error) {
+        showToast("เกิดข้อผิดพลาดในการทำรายการกลุ่ม: " + error.message);
+    } else {
+        showToast("ดำเนินการเรียบร้อยแล้ว");
+        await fetchPosts();
+        openRosterModal(currentRosterPostId);
+    }
+}
