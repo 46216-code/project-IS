@@ -974,6 +974,22 @@ function toggleEditTypeFields() {
     if (locField) locField.classList.toggle('hidden', type !== 'Meet-up');
 }
 
+// Helper to convert plain text URLs into clickable HTML links (Req #1)
+function formatLinksInText(text) {
+    if (!text) return "";
+    
+    // Regular expression to identify HTTP/HTTPS/WWW links
+    const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])|(\bwww\.[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+
+    return text.replace(urlPattern, (url) => {
+        let href = url;
+        if (url.toLowerCase().startsWith('www.')) {
+            href = 'https://' + url;
+        }
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:text-orange-600 underline font-semibold break-all">${url}</a>`;
+    });
+}
+
 function openDetailsModal(postId) {
     selectedPostId = postId;
     const post = memoryPosts.find(p => p.id === postId);
@@ -987,7 +1003,12 @@ function openDetailsModal(postId) {
     const modalLocation = document.getElementById('detailLocation');
 
     if (modalTitle) modalTitle.innerText = post.title;
-    if (modalDesc) modalDesc.innerText = post.description;
+    
+    // Convert links and set HTML for scrollable description (Req #1 & #3)
+    if (modalDesc) {
+        modalDesc.innerHTML = formatLinksInText(post.description);
+    }
+
     if (modalType) modalType.innerText = post.type;
     if (modalImage) modalImage.src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
     

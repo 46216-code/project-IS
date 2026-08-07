@@ -299,43 +299,56 @@
 </div>
  
     <!-- Details Modal -->
-    <div id="detailsModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
-        <div class="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all">
-            <button onclick="closeModal('detailsModal')" class="absolute top-5 right-5 text-gray-500 hover:text-gray-800 bg-white/90 backdrop-blur-md hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-10 transition shadow-md border border-gray-100 cursor-pointer">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="relative h-72 bg-gray-100">
-                <img id="detailImage" class="w-full h-full object-cover" src="" alt="Activity Banner">
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent"></div>
-                <div class="absolute bottom-6 left-8 right-8">
-                    <span id="detailType" class="inline-block bg-orange-400 text-white font-bold tracking-wide uppercase text-xs px-3 py-1.5 rounded-lg mb-3 shadow-md shadow-orange-500/10">Active Event</span>
-                    <h2 id="detailTitle" class="text-white text-3xl font-extrabold tracking-tight drop-shadow-sm"></h2>
-                </div>
+<div id="detailsModal" class="fixed inset-0 bg-gray-900/40 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
+    <div class="bg-white rounded-[32px] max-w-2xl w-full overflow-hidden shadow-[0_30px_70px_rgba(0,0,0,0.15)] border border-gray-100 relative transform transition-all flex flex-col max-h-[90vh]">
+        
+        <!-- Close Button -->
+        <button onclick="closeModal('detailsModal')" class="absolute top-5 right-5 text-gray-500 hover:text-gray-800 bg-white/90 backdrop-blur-md hover:bg-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold z-20 transition shadow-md border border-gray-100 cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Image Banner with Layered Title (Req #2) -->
+        <div class="relative h-72 bg-gray-100 flex-shrink-0">
+            <img id="detailImage" class="w-full h-full object-cover" src="" alt="Activity Banner">
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-950/85 via-gray-950/30 to-transparent"></div>
+            
+            <div class="absolute bottom-6 left-8 right-8 z-10">
+                <span id="detailType" class="inline-block bg-orange-400 text-white font-bold tracking-wide uppercase text-xs px-3 py-1.5 rounded-lg mb-2 shadow-md shadow-orange-500/10">Active Event</span>
+                <!-- Post Title Layered on Picture -->
+                <h2 id="detailTitle" class="text-white text-3xl font-extrabold tracking-tight drop-shadow-md leading-tight"></h2>
             </div>
-            <div class="p-8 md:p-10">
-                <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">รายละเอียดกิจกรรม</h3>
-                <p id="detailDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line"></p>
-                <div class="mt-2 space-y-1">
-                    <p id="detailBudget" class="text-green-600 font-bold text-sm hidden"></p>
-                    <p id="detailLocation" class="text-blue-600 font-bold text-sm hidden"></p>
-                </div>
-                <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-                    <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
-                    <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
-                        <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
-                        <div class="relative z-10 flex items-center justify-between w-full">
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="p-8 md:p-10 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex-shrink-0">รายละเอียดกิจกรรม</h3>
+            
+            <!-- Scrollable Description Container (Req #3) -->
+            <div id="detailDesc" class="text-gray-600 text-base leading-relaxed whitespace-pre-line overflow-y-auto custom-scroll pr-2 flex-1 max-h-56"></div>
+            
+            <div class="mt-4 space-y-1 flex-shrink-0">
+                <p id="detailBudget" class="text-green-600 font-bold text-sm hidden"></p>
+                <p id="detailLocation" class="text-blue-600 font-bold text-sm hidden"></p>
+            </div>
+
+            <!-- Footer & Action Button -->
+            <div class="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
+                <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
+                <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
+                    <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
+                    <div class="relative z-10 flex items-center justify-between w-full">
                         <span class="flex items-center gap-3">
                             <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
                             <span id="hold-btn-label" class="font-semibold text-sm">กดค้างเพื่อสมัคร</span>
                         </span>
-                        </div>
-                    </button>
-                </div>
+                    </div>
+                </button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- Confirm Apply Modal -->
     <div id="confirmModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-md hidden flex items-center justify-center p-6 z-50 transition-all duration-300">
