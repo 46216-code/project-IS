@@ -786,19 +786,23 @@ async function fetchPosts() {
     }
 }
 
+// Variable to store current user's credential level globally
+let currentUserCredential = 1;
+
 function renderFilteredPosts() {
     const grid = document.getElementById('boardGrid');
     const emptyState = document.getElementById('emptyState');
     const emptyStateText = document.getElementById('emptyStateText');
     if (!grid) return;
 
-    // BEFORE RENDERING: Guarantee removal of existing post cards AND skeleton
+    // Clear existing cards & skeleton
     grid.querySelectorAll('.post-card').forEach(card => card.remove());
-    showSkeletonLoader(false);
+    if (typeof showSkeletonLoader === 'function') {
+        showSkeletonLoader(false);
+    }
 
     let displayedPosts = [...memoryPosts];
 
-    // Apply active view tab filters
     if (activeViewTab === "my" && loggedInUser) {
         displayedPosts = displayedPosts.filter(post => post.user_id === loggedInUser.id);
     } else if (activeViewTab === "favorite") {
@@ -807,12 +811,10 @@ function renderFilteredPosts() {
         displayedPosts = displayedPosts.filter(post => appliedPostIds.has(post.id));
     }
 
-    // Apply category tag filter
     if (currentFilterType !== "All") {
         displayedPosts = displayedPosts.filter(post => post.type === currentFilterType);
     }
 
-    // Render Empty State or Cards
     if (displayedPosts.length === 0) { 
         if (emptyState) {
             emptyState.classList.remove('hidden'); 
@@ -834,8 +836,9 @@ function renderFilteredPosts() {
             const isFull = post.joined_count >= post.people_limit;
             const isFav = favoritePostIds.has(post.id);
             const isOwner = loggedInUser && loggedInUser.id === post.user_id;
-            let btnHtml = "";
+            const isModerator = currentUserCredential === 2;
 
+            let btnHtml = "";
             if (isOwner) {
                 btnHtml = `
                     <div class="flex flex-col gap-1.5">
@@ -846,7 +849,7 @@ function renderFilteredPosts() {
                             <button onclick="openEditModal(${post.id})" class="flex-1 bg-amber-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-amber-600 transition cursor-pointer">
                                 <i class="fa-solid fa-pen-to-square text-xs"></i> แก้ไข
                             </button>
-                            <button onclick="deletePost(${post.id})" class="flex-1 bg-rose-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-rose-600 transition cursor-pointer">
+                            <button onclick="promptDeletePost(${post.id})" class="flex-1 bg-rose-500 text-white px-3 py-1.5 rounded-full text-xs font-bold hover:bg-rose-600 transition cursor-pointer">
                                 <i class="fa-solid fa-trash text-xs"></i> ลบ
                             </button>
                         </div>
@@ -867,15 +870,26 @@ function renderFilteredPosts() {
                 `;
             }
 
+            // Moderator Delete Button (Styled identically to Favorite Button)
+            const modDeleteBtn = isModerator ? `
+                <button onclick="promptDeletePost(${post.id}, event)" title="Moderator Delete" class="bg-white/80 hover:bg-white text-rose-600 rounded-full w-9 h-9 flex items-center justify-center shadow-md transition-transform active:scale-90 cursor-pointer">
+                    <i class="fa-solid fa-trash-can text-base"></i>
+                </button>
+            ` : '';
+
             card.innerHTML = `
                 <div class="h-44 w-full bg-gray-200 overflow-hidden relative flex-shrink-0">
                     <img src="${cardImage}" class="w-full h-full object-cover">
                     <span class="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full border border-white shadow-sm">
                         ${post.type}
                     </span>
-                    <button onclick="toggleFavorite(${post.id}, event)" class="absolute top-3 left-3 bg-white/80 hover:bg-white text-rose-500 rounded-full w-9 h-9 flex items-center justify-center shadow-md transition-transform active:scale-90 cursor-pointer">
-                        <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
-                    </button>
+                    <!-- Button Container at Top-Left -->
+                    <div class="absolute top-3 left-3 flex items-center gap-2">
+                        <button onclick="toggleFavorite(${post.id}, event)" class="bg-white/80 hover:bg-white text-rose-500 rounded-full w-9 h-9 flex items-center justify-center shadow-md transition-transform active:scale-90 cursor-pointer">
+                            <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-lg"></i>
+                        </button>
+                        ${modDeleteBtn}
+                    </div>
                 </div>
                 <div class="p-5 flex-1 flex flex-col justify-between overflow-hidden">
                     <div class="overflow-hidden flex flex-col flex-1">
@@ -1599,3 +1613,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Fetch posts
     fetchPosts();
 });
+
+let pendingDeletePostId = null;
+
+// Open custom confirmation modal
+function promptDeletePost(postId, event) {
+    if (event) event.stopPropagation();
+    pendingDeletePostId = postId;
+    
+    const modal = document.getElementById('confirmDeleteModal');
+    const box = document.getElementById('confirmDeleteBox');
+    if (!modal || !box) return;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        box.classList.remove('scale-95');
+        box.classList.add('scale-100');
+    }, 10);
+
+    // Attach click handler to confirm button
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.onclick = () => executeDeletePost();
+}
+
+// Close custom confirmation modal
+function closeConfirmDeleteModal() {
+    const modal = document.getElementById('confirmDeleteModal');
+    const box = document.getElementById('confirmDeleteBox');
+    if (!modal || !box) return;
+
+    modal.classList.add('opacity-0');
+    box.classList.remove('scale-100');
+    box.classList.add('scale-95');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        pendingDeletePostId = null;
+    }, 200);
+}
+
+// Execute deletion in Supabase
+async function executeDeletePost() {
+    if (!pendingDeletePostId) return;
+
+    const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('id', pendingDeletePostId);
+
+    closeConfirmDeleteModal();
+
+    if (error) {
+        console.error("Error deleting post:", error.message);
+        return;
+    }
+
+    // Refresh post list after deletion
+    fetchPosts();
+}
+
+// Update loadUserCredential to set global currentUserCredential & re-render
+async function loadUserCredential(userId) {
+    const statusElement = document.getElementById('Status');
+
+    if (!userId) {
+        currentUserCredential = 1;
+        if (statusElement) statusElement.innerHTML = `<i>Visitor</i>`;
+        return;
+    }
+
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('Credential')
+        .eq('id', userId)
+        .single();
+
+    if (error || !data) {
+        currentUserCredential = 1;
+        if (statusElement) statusElement.innerHTML = `<i>Visitor</i>`;
+        return;
+    }
+
+    currentUserCredential = data.Credential || 1;
+
+    if (statusElement) {
+        statusElement.innerHTML = currentUserCredential === 2 ? `<i>Moderator</i>` : `<i>Visitor</i>`;
+    }
+
+    // Re-render posts to show/hide moderator controls
+    renderFilteredPosts();
+}
