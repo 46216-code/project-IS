@@ -54,8 +54,8 @@
                 <p class="text-orange-950 font-bold text-base tracking-tight flex items-center gap-1.5 justify-end">
                     <span id="userDisplay">User</span>
                 </p>
-                <span onclick="event.stopPropagation(); switchTab('my');" class="flex items-center justify-end gap-1.5 text-orange-500 hover:text-orange-600 text-xs font-bold cursor-pointer transition-all active:scale-95">
-                    <i class="fa-solid fa-rectangle-list"></i> My post
+                <span class="flex items-center justify-end gap-1.5 text-orange-500/50 hover:text-orange-600 text-xs font-bold cursor-pointer transition-all active:scale-95" id="Status">
+                    <i>Visitor</i>
                 </span>
             </div>
             
@@ -394,13 +394,13 @@
                   <div class="w-10 h-10 bg-orange-500 rounded-xl rotate-12 flex items-center justify-center shadow-md">
                     <span class="text-white font-bold -rotate-12">1</span>
                   </div>
-                  <span class="text-gray-700 font-medium">Create a new project</span>
+                  <span class="text-gray-700 font-medium text-left"> กดปุ่ม <b class="text-emerald-500 text-left">Create Post</b> เพื่อเริ่มสร้างประกาศให้คนเข้าใช้งาน</span>
                 </li>
                 <li class="flex items-center gap-4">
                   <div class="w-10 h-10 bg-orange-500 rounded-xl rotate-12 flex items-center justify-center shadow-md">
                     <span class="text-white font-bold -rotate-12">2</span>
                   </div>
-                  <span class="text-gray-700 font-medium">Install Tailwind CSS</span>
+                  <span class="text-gray-700 font-medium text-left">กดปุ่ม <b class="text-emerald-500 text-left">Apply</b> เพื่อส่งคำขอสมัคร</span>
                 </li>
             </ol>
             <div class="mt-8">
