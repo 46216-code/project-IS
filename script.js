@@ -30,6 +30,61 @@ const defaultAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377
 const currentPage = window.location.pathname.split("/").pop().toLowerCase();
 
 //--------------------------
+// SKELETON SCREEN LOADER
+// --------------------------
+
+function showSkeletonLoader(show = true) {
+    const grid = document.getElementById('boardGrid');
+    const emptyState = document.getElementById('emptyState');
+    if (!grid) return;
+
+    let skeletonContainer = document.getElementById('skeletonContainer');
+
+    if (show) {
+        if (emptyState) emptyState.classList.add('hidden');
+        if (!skeletonContainer) {
+            skeletonContainer = document.createElement('div');
+            skeletonContainer.id = 'skeletonContainer';
+            skeletonContainer.className = 'col-span-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 w-full';
+            
+            const skeletonCardHTML = `
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden flex flex-col h-[420px] animate-pulse">
+                    <div class="h-44 w-full bg-gray-200 relative flex-shrink-0">
+                        <div class="absolute top-3 right-3 bg-gray-300 h-6 w-20 rounded-full"></div>
+                        <div class="absolute top-3 left-3 bg-gray-300 w-9 h-9 rounded-full"></div>
+                    </div>
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="h-6 bg-gray-200 rounded-md w-3/4"></div>
+                            <div class="space-y-2">
+                                <div class="h-4 bg-gray-200 rounded-md w-full"></div>
+                                <div class="h-4 bg-gray-200 rounded-md w-2/3"></div>
+                            </div>
+                            <div class="h-3 bg-gray-200 rounded-md w-1/2"></div>
+                        </div>
+                        <div class="flex flex-col pt-3 border-t border-gray-100 space-y-3">
+                            <div class="flex justify-between">
+                                <div class="h-3 bg-gray-200 rounded-md w-1/3"></div>
+                                <div class="h-3 bg-gray-200 rounded-md w-1/4"></div>
+                            </div>
+                            <div class="h-10 bg-gray-200 rounded-full w-full"></div>
+                        </div>
+                    </div>
+                </div>`;
+            
+            skeletonContainer.innerHTML = skeletonCardHTML.repeat(6);
+            grid.appendChild(skeletonContainer);
+        }
+    } else {
+        // Direct cleanup to guarantee removal
+        if (skeletonContainer) {
+            skeletonContainer.remove();
+        }
+    }
+}
+
+
+//--------------------------
 // DECLARING TOASTS & HOLD BUTTON
 //--------------------------
 
@@ -698,17 +753,22 @@ async function fetchPosts() {
     const grid = document.getElementById('boardGrid');
     if (!grid || !supabaseClient) return;
 
-    // Fetch posts along with the creator's username from the profiles table
+    // 1. BEFORE FETCH: Trigger skeleton UI
+    showSkeletonLoader(true);
+
     const { data, error } = await supabaseClient
         .from('posts')
         .select('*, profiles(username)')
         .order('id', { ascending: false });
     
+    // 2. ERROR HANDLER: Remove skeleton if query fails
     if (error) {
         console.error("Error fetching posts:", error.message);
+        showSkeletonLoader(false);
         return;
     }
 
+    // 3. SUCCESS HANDLER: Format data and render
     if (data) {
         memoryPosts = data.map(post => {
             const authorName = post.profiles?.username 
@@ -720,6 +780,8 @@ async function fetchPosts() {
                 joined_count: Math.min(post.people_limit || 999999, Math.max(0, Number(post.joined_count || 0)))
             };
         });
+
+        // Delegate UI update & skeleton removal to renderFilteredPosts
         renderFilteredPosts();
     }
 }
@@ -730,10 +792,13 @@ function renderFilteredPosts() {
     const emptyStateText = document.getElementById('emptyStateText');
     if (!grid) return;
 
+    // BEFORE RENDERING: Guarantee removal of existing post cards AND skeleton
     grid.querySelectorAll('.post-card').forEach(card => card.remove());
+    showSkeletonLoader(false);
 
     let displayedPosts = [...memoryPosts];
 
+    // Apply active view tab filters
     if (activeViewTab === "my" && loggedInUser) {
         displayedPosts = displayedPosts.filter(post => post.user_id === loggedInUser.id);
     } else if (activeViewTab === "favorite") {
@@ -742,10 +807,12 @@ function renderFilteredPosts() {
         displayedPosts = displayedPosts.filter(post => appliedPostIds.has(post.id));
     }
 
+    // Apply category tag filter
     if (currentFilterType !== "All") {
         displayedPosts = displayedPosts.filter(post => post.type === currentFilterType);
     }
 
+    // Render Empty State or Cards
     if (displayedPosts.length === 0) { 
         if (emptyState) {
             emptyState.classList.remove('hidden'); 
@@ -834,6 +901,24 @@ function renderFilteredPosts() {
         });
     }
 }
+
+// Step 4: Event handlers for switching tabs and filtering
+function switchTab(tabName) {
+    activeViewTab = tabName;
+    // Clears any active skeleton and re-renders filtered posts
+    renderFilteredPosts(); 
+}
+
+function filterByType(type) {
+    currentFilterType = type;
+    // Clears any active skeleton and re-renders filtered posts
+    renderFilteredPosts(); 
+}
+
+// Initial setup on page load
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPosts();
+});
 
 // ==========================================
 // 5. APPLICANT ROSTER MANAGEMENT FUNCTIONS
