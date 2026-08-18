@@ -1534,3 +1534,68 @@ async function batchUpdateApplications(action) {
         openRosterModal(currentRosterPostId);
     }
 }
+
+// ==========================================
+// Credential System (Place at the end of script.js)
+// ==========================================
+
+// Function to update the UI status based on user credential
+async function loadUserCredential(userId) {
+    const statusElement = document.getElementById('Status');
+    if (!statusElement) return;
+
+    if (!userId) {
+        statusElement.innerHTML = `<i>Visitor</i>`;
+        return;
+    }
+
+    // Query the Credential column from the profiles table
+    const { data, error } = await supabaseClient
+        .from('profiles')
+        .select('Credential')
+        .eq('id', userId)
+        .single();
+
+    if (error || !data) {
+        console.error("Error fetching user credential:", error?.message);
+        statusElement.innerHTML = `<i>Visitor</i>`;
+        return;
+    }
+
+    // Render status based on int2 value (1 = Visitor, 2 = Moderator)
+    if (data.Credential === 2) {
+        statusElement.innerHTML = `<i>Moderator</i>`;
+    } else {
+        statusElement.innerHTML = `<i>Visitor</i>`;
+    }
+}
+
+// Listen for auth state changes (login, logout, sign up)
+if (typeof supabaseClient !== 'undefined' && supabaseClient.auth) {
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+            loggedInUser = session.user;
+            await loadUserCredential(session.user.id);
+        } else {
+            loggedInUser = null;
+            loadUserCredential(null);
+        }
+    });
+}
+
+// Existing DOMContentLoaded block
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Session check
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    
+    if (session?.user) {
+        loggedInUser = session.user;
+        await loadUserCredential(session.user.id); // <--- ADD THIS LINE HERE
+    } else {
+        loggedInUser = null;
+        loadUserCredential(null); // <--- AND THIS LINE HERE
+    }
+
+    // 2. Fetch posts
+    fetchPosts();
+});
