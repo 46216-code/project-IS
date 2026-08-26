@@ -716,21 +716,8 @@ async function handleEditPost(event) {
     }
 }
 
-async function deletePost(postId) {
-    if (!confirm("คุณต้องการลบโพสต์นี้ใช่หรือไม่?")) return;
-
-    const { error } = await supabaseClient
-        .from('posts')
-        .delete()
-        .eq('id', postId)
-        .eq('user_id', loggedInUser.id);
-
-    if (error) {
-        showToast("ลบโพสต์ไม่สำเร็จ: " + error.message);
-    } else {
-        showToast("ลบโพสต์สำเร็จ");
-        fetchPosts();
-    }
+function deletePost(postId) {
+    promptDeletePost(postId);
 }
 
 function openEditModal(postId) {
@@ -1655,22 +1642,42 @@ function closeConfirmDeleteModal() {
 
 // Execute deletion in Supabase
 async function executeDeletePost() {
-    if (!pendingDeletePostId) return;
-
-    const { error } = await supabaseClient
-        .from('posts')
-        .delete()
-        .eq('id', pendingDeletePostId);
-
-    closeConfirmDeleteModal();
-
-    if (error) {
-        console.error("Error deleting post:", error.message);
+    // 1. Guard check if ID is missing
+    if (!pendingDeletePostId) {
+        showToast("ไม่พบ ID ของโพสต์ที่จะลบ");
         return;
     }
 
-    // Refresh post list after deletion
-    fetchPosts();
+    try {
+        // 2. Perform deletion and request returned data (.select)
+        const { data, error } = await supabaseClient
+            .from('posts')
+            .delete()
+            .eq('id', pendingDeletePostId)
+            .select();
+
+        closeConfirmDeleteModal();
+
+        // 3. Handle database errors
+        if (error) {
+            showToast("ลบโพสต์ไม่สำเร็จ: " + error.message);
+            return;
+        }
+
+        // 4. Handle Supabase RLS silent blocks (0 rows deleted)
+        if (!data || data.length === 0) {
+            showToast("ไม่สามารถลบโพสต์ได้ (ติดสิทธิ์ RLS ในระบบ)");
+            return;
+        }
+
+        // 5. Success feedback
+        showToast("ลบโพสต์สำเร็จ");
+        fetchPosts();
+
+    } catch (err) {
+        closeConfirmDeleteModal();
+        showToast("เกิดข้อผิดพลาดในระบบ: " + err.message);
+    }
 }
 
 // Update loadUserCredential to set global currentUserCredential & re-render
