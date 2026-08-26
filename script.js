@@ -1,6 +1,7 @@
 // ==========================================
 // 1. CONFIGURATION & INITIALIZATION
 // ==========================================
+const approvedPostIds = new Set(); // Stores IDs of posts accepted by the creator
 const SUPABASE_URL = "https://vznmzjoouyxwosyrshzb.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_jnBAcgvSsdX465MooaAEUw_nsOHFkqv";
 
@@ -84,126 +85,188 @@ function showSkeletonLoader(show = true) {
 }
 
 
-//--------------------------
+// ==========================================
 // DECLARING TOASTS & HOLD BUTTON
-//--------------------------
-
+// ==========================================
 const btn = document.getElementById('hold-btn');
-const fill = document.getElementById('progress-fill');
 const toast = document.getElementById('toast');
 
+function getHoldFillElement() {
+    return document.getElementById('hold-fill') || document.getElementById('progress-fill');
+}
+
+// ==========================================
+// 1. GLOBAL STATE & ANIMATION CONTROLLER
+// ==========================================
+let pendingDotsTimer = null;
 let holdTimer = null;
-let toastTimer = null;
+const HOLD_DURATION = 1500; // Time in ms to complete hold
 
-function updateHoldButtonState(postId = selectedPostId) {
+function initPendingDotsAnimation() {
+    if (pendingDotsTimer) return;
+    const states = ['...', '..', '.'];
+    let index = 0;
+    
+    pendingDotsTimer = setInterval(() => {
+        index = (index + 1) % states.length;
+        document.querySelectorAll('.pending-dots').forEach(el => {
+            el.textContent = states[index];
+        });
+    }, 1000);
+}
+
+// ==========================================
+// 2. SAFE HOLD GESTURE BINDING
+// ==========================================
+function bindHoldEvents(postId) {
     const holdButton = document.getElementById('hold-btn');
-    const holdLabel = document.getElementById('hold-btn-label');
-    const post = memoryPosts.find(p => p.id === postId);
-    const isAlreadyApplied = !!post && appliedPostIds.has(post.id);
+    if (!holdButton || holdButton.disabled) return;
 
-    if (holdButton) {
-        holdButton.disabled = isAlreadyApplied;
-        holdButton.classList.toggle('opacity-70', isAlreadyApplied);
-        holdButton.classList.toggle('cursor-not-allowed', isAlreadyApplied);
-        holdButton.classList.toggle('hover:scale-105', !isAlreadyApplied);
-        holdButton.classList.toggle('active:scale-95', !isAlreadyApplied);
-        holdButton.classList.toggle('bg-gray-500', isAlreadyApplied);
-        holdButton.classList.toggle('border-gray-400', isAlreadyApplied);
-        holdButton.classList.toggle('bg-slate-800', !isAlreadyApplied);
-        holdButton.classList.toggle('border-slate-700', !isAlreadyApplied);
-    }
+    // Clone element to purge pre-existing event listeners
+    const cleanButton = holdButton.cloneNode(true);
+    holdButton.parentNode.replaceChild(cleanButton, holdButton);
 
-    if (holdLabel) {
-        holdLabel.innerText = isAlreadyApplied ? 'คุณสมัครไปแล้ว' : 'กดค้างเพื่อสมัคร';
-    }
+    const startHold = (e) => {
+        e.preventDefault();
+        if (appliedPostIds.has(postId) || approvedPostIds.has(postId)) return;
 
+        const fill = getHoldFillElement();
+        if (fill) {
+            // Emerald animation using cubic-bezier timing
+            fill.style.transition = 'transform 1500ms cubic-bezier(.9, .15, .84, .78)';
+            fill.classList.remove('hidden', 'scale-x-0');
+            fill.classList.add('bg-emerald-500', 'origin-left', 'scale-x-100');
+        }
+
+        holdTimer = setTimeout(() => {
+            submitApplication(postId);
+        }, HOLD_DURATION);
+    };
+
+    const cancelHold = () => {
+        clearTimeout(holdTimer);
+        resetHoldProgress();
+    };
+
+    cleanButton.addEventListener('mousedown', startHold);
+    cleanButton.addEventListener('mouseup', cancelHold);
+    cleanButton.addEventListener('mouseleave', cancelHold);
+    cleanButton.addEventListener('touchstart', startHold);
+    cleanButton.addEventListener('touchend', cancelHold);
+    cleanButton.addEventListener('touchcancel', cancelHold);
+}
+
+function resetHoldProgress() {
+    const fill = getHoldFillElement();
     if (fill) {
+        fill.style.transition = 'none';
         fill.classList.remove('scale-x-100');
         fill.classList.add('scale-x-0');
     }
 }
 
-function startHold() {
-    if (!fill || (btn && btn.disabled)) return;
+// ==========================================
+// 3. APPLICATION SUBMIT HANDLER
+// ==========================================
+async function submitApplication(postId) {
+    const post = memoryPosts.find(p => p.id === postId);
+    if (!post) return;
 
-    fill.classList.remove('duration-0');
-    fill.classList.add('duration-[2000ms]', 'scale-x-100');
-
-    holdTimer = setTimeout(() => {
-        handleHoldComplete();
-        resetHold();
-    }, 2000);
-}
-
-function resetHold() {
-    if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-    }
-
-    if (!fill) return;
-
-    fill.classList.remove('duration-[2000ms]', 'scale-x-100');
-    fill.classList.add('duration-0');
-}
-
-async function handleHoldComplete() {
-    if (!selectedPostId) {
-        showToast();
+    if (post.joined_count >= post.people_limit) {
+        resetHoldProgress();
+        alert('สมัครไม่สำเร็จ: จำนวนคนเต็มแล้ว');
+        renderFilteredPosts();
         return;
     }
 
-    const post = memoryPosts.find(p => p.id === selectedPostId);
-    if (post && appliedPostIds.has(post.id)) {
-        updateHoldButtonState(selectedPostId);
-        return;
+    try {
+        appliedPostIds.add(post.id);
+        post.joined_count += 1;
+
+        updateHoldButtonState(postId);
+        renderFilteredPosts();
+
+    } catch (error) {
+        resetHoldProgress();
+        alert(error.message || 'เกิดข้อผิดพลาดในการสมัคร กรุณาลองใหม่อีกครั้ง');
+    }
+}
+
+// ==========================================
+// 4. MODAL HOLD BUTTON STATE
+// ==========================================
+function updateHoldButtonState(postId = selectedPostId) {
+    selectedPostId = postId;
+    const holdButton = document.getElementById('hold-btn');
+    const holdLabel = document.getElementById('hold-btn-label');
+    const fill = getHoldFillElement();
+    
+    const post = memoryPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    const isApproved = approvedPostIds.has(post.id) || post.status === 'approved' || post.is_approved;
+    const isAlreadyApplied = appliedPostIds.has(post.id) && !isApproved;
+    const isFull = post.joined_count >= post.people_limit;
+
+    // Reset progress bar element
+    if (fill) {
+        fill.style.transition = 'none';
+        fill.classList.remove('scale-x-100');
+        fill.classList.add('scale-x-0');
+        fill.classList.toggle('hidden', isAlreadyApplied || isApproved);
     }
 
-    if (post && loggedInUser && loggedInUser.id === post.user_id) {
-        if (typeof openConfirmModal === 'function') {
-            openConfirmModal();
+    if (holdButton) {
+        const isDisabled = isAlreadyApplied || isApproved || isFull;
+        holdButton.disabled = isDisabled;
+
+        holdButton.classList.toggle('cursor-not-allowed', isDisabled);
+        
+        if (isAlreadyApplied || isApproved) {
+            // 2. SUCCESSFUL APPLICATION: Transparent background & borderless
+            holdButton.classList.remove('bg-black', 'bg-slate-800', 'border-slate-700');
+            holdButton.classList.add('bg-transparent', 'border-none', 'shadow-none');
+        } else {
+            // 1. NOT HELD / NOT SIGNED UP YET: Solid Black background
+            holdButton.classList.remove('bg-transparent', 'border-none', 'shadow-none', 'bg-slate-800');
+            holdButton.classList.add('bg-black', 'border', 'border-slate-800');
         }
-        return;
+
+        holdButton.classList.toggle('opacity-70', isFull && !isAlreadyApplied && !isApproved);
     }
 
-    if (typeof submitApplication === 'function') {
-        await submitApplication(true);
-        return;
+    if (holdLabel) {
+        if (isApproved) {
+            // GREEN APPROVED STATE
+            holdLabel.innerHTML = `
+                <span class="inline-flex items-center gap-2 text-emerald-500 font-black text-base">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-lg"></i>
+                    Application Approved!
+                </span>`;
+        } else if (isAlreadyApplied) {
+            // 2. SUCCESSFUL APPLICATION: Yellow text + animated dots
+            holdLabel.innerHTML = `
+                <span class="inline-flex items-center gap-2 text-amber-500 font-black text-base">
+                    <i class="fa-solid fa-circle-check text-amber-500 text-lg"></i>
+                    Approval Pending<span class="pending-dots">...</span>
+                </span>`;
+            initPendingDotsAnimation();
+        } else if (isFull) {
+            holdLabel.innerText = 'เต็มแล้ว / Full';
+        } else {
+            // DEFAULT TEXT
+            holdLabel.innerText = 'กดค้างเพื่อสมัคร';
+        }
     }
 
-    showToast();
+    if (!isAlreadyApplied && !isApproved && !isFull) {
+        bindHoldEvents(postId);
+    }
 }
 
-function showToast(message = "การสมัครสำเร็จ! ติดตามการสมัครที่ปุ่ม Menu ทางด้านซ้ายบนของหน้าหลักได้เลย!", duration = 3000) {
-    const toastMessage = document.getElementById('toastMessage');
-    if (!toast) return;
-
-    if (toastTimer) clearTimeout(toastTimer);
-
-    if (toastMessage) {
-        toastMessage.innerText = message;
-    }
-
-    toast.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
-    toast.classList.add('opacity-100', 'scale-100');
-
-    toastTimer = setTimeout(() => {
-        toast.classList.remove('opacity-100', 'scale-100');
-        toast.classList.add('opacity-0', 'scale-90', 'pointer-events-none');
-    }, duration);
-}
-
-if (btn) {
-    btn.addEventListener('mousedown', startHold);
-    btn.addEventListener('mouseup', resetHold);
-    btn.addEventListener('mouseleave', resetHold);
-
-    btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        startHold();
-    });
-    btn.addEventListener('touchend', resetHold);
-    btn.addEventListener('touchcancel', resetHold);
+function approveUserApplication(postId) {
+    approvedPostIds.add(postId);
+    updateHoldButtonState(postId);
 }
 
 // ==========================================
@@ -716,8 +779,21 @@ async function handleEditPost(event) {
     }
 }
 
-function deletePost(postId) {
-    promptDeletePost(postId);
+async function deletePost(postId) {
+    if (!confirm("คุณต้องการลบโพสต์นี้ใช่หรือไม่?")) return;
+
+    const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', loggedInUser.id);
+
+    if (error) {
+        showToast("ลบโพสต์ไม่สำเร็จ: " + error.message);
+    } else {
+        showToast("ลบโพสต์สำเร็จ");
+        fetchPosts();
+    }
 }
 
 function openEditModal(postId) {
@@ -1642,42 +1718,22 @@ function closeConfirmDeleteModal() {
 
 // Execute deletion in Supabase
 async function executeDeletePost() {
-    // 1. Guard check if ID is missing
-    if (!pendingDeletePostId) {
-        showToast("ไม่พบ ID ของโพสต์ที่จะลบ");
+    if (!pendingDeletePostId) return;
+
+    const { error } = await supabaseClient
+        .from('posts')
+        .delete()
+        .eq('id', pendingDeletePostId);
+
+    closeConfirmDeleteModal();
+
+    if (error) {
+        console.error("Error deleting post:", error.message);
         return;
     }
 
-    try {
-        // 2. Perform deletion and request returned data (.select)
-        const { data, error } = await supabaseClient
-            .from('posts')
-            .delete()
-            .eq('id', pendingDeletePostId)
-            .select();
-
-        closeConfirmDeleteModal();
-
-        // 3. Handle database errors
-        if (error) {
-            showToast("ลบโพสต์ไม่สำเร็จ: " + error.message);
-            return;
-        }
-
-        // 4. Handle Supabase RLS silent blocks (0 rows deleted)
-        if (!data || data.length === 0) {
-            showToast("ไม่สามารถลบโพสต์ได้ (ติดสิทธิ์ RLS ในระบบ)");
-            return;
-        }
-
-        // 5. Success feedback
-        showToast("ลบโพสต์สำเร็จ");
-        fetchPosts();
-
-    } catch (err) {
-        closeConfirmDeleteModal();
-        showToast("เกิดข้อผิดพลาดในระบบ: " + err.message);
-    }
+    // Refresh post list after deletion
+    fetchPosts();
 }
 
 // Update loadUserCredential to set global currentUserCredential & re-render
