@@ -95,31 +95,48 @@ const toast = document.getElementById('toast');
 let holdTimer = null;
 let toastTimer = null;
 
-function updateHoldButtonState(postId = selectedPostId) {
-    const holdButton = document.getElementById('hold-btn');
+function updateHoldButtonStateUI(status) {
+    const holdBtn = document.getElementById('hold-btn');
     const holdLabel = document.getElementById('hold-btn-label');
-    const post = memoryPosts.find(p => p.id === postId);
-    const isAlreadyApplied = !!post && appliedPostIds.has(post.id);
+    const fill = document.getElementById('progress-fill');
+    
+    if (!holdBtn || !holdLabel) return;
 
-    if (holdButton) {
-        holdButton.disabled = isAlreadyApplied;
-        holdButton.classList.toggle('opacity-70', isAlreadyApplied);
-        holdButton.classList.toggle('cursor-not-allowed', isAlreadyApplied);
-        holdButton.classList.toggle('hover:scale-105', !isAlreadyApplied);
-        holdButton.classList.toggle('active:scale-95', !isAlreadyApplied);
-        holdButton.classList.toggle('bg-gray-500', isAlreadyApplied);
-        holdButton.classList.toggle('border-gray-400', isAlreadyApplied);
-        holdButton.classList.toggle('bg-slate-800', !isAlreadyApplied);
-        holdButton.classList.toggle('border-slate-700', !isAlreadyApplied);
-    }
+    // Base Modern Styling
+    holdBtn.className = "relative flex items-center justify-between w-full sm:w-80 h-14 px-6 rounded-2xl transition-all duration-300 select-none overflow-hidden font-bold text-sm tracking-wide";
+    
+    if (fill) fill.classList.add('hidden');
 
-    if (holdLabel) {
-        holdLabel.innerText = isAlreadyApplied ? 'คุณสมัครไปแล้ว' : 'กดค้างเพื่อสมัคร';
-    }
-
-    if (fill) {
-        fill.classList.remove('scale-x-100');
-        fill.classList.add('scale-x-0');
+    if (status === 'pending') {
+        holdBtn.disabled = true;
+        holdBtn.className += " bg-amber-500/10 border border-amber-500/30 text-amber-600 cursor-default";
+        holdLabel.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-hourglass-half animate-spin"></i> Waiting for Confirmation</span>`;
+    } 
+    else if (status === 'accepted') {
+        holdBtn.disabled = true;
+        holdBtn.className += " bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 cursor-default";
+        holdLabel.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-circle-check"></i> Application Accepted</span>`;
+    } 
+    else if (status === 'declined') {
+        holdBtn.disabled = true;
+        holdBtn.className += " bg-rose-500/10 border border-rose-500/30 text-rose-600 cursor-default";
+        holdLabel.innerHTML = `<span class="flex items-center gap-2"><i class="fa-solid fa-circle-xmark"></i> Application Denied</span>`;
+    } 
+    else {
+        // Active state with hover glow, smooth shadow, and modern icon indicator
+        holdBtn.disabled = false;
+        holdBtn.className += " bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25 active:scale-95 cursor-pointer";
+        holdLabel.innerHTML = `
+            <span class="flex items-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>กดค้างเพื่อสมัคร</span>
+            </span>
+            <i class="fa-solid fa-arrow-right opacity-70"></i>
+        `;
+        if (fill) {
+            fill.className = "absolute inset-0 bg-emerald-600 origin-left scale-x-0 transition-transform ease-out duration-0";
+            fill.classList.remove('hidden');
+        }
     }
 }
 
@@ -1076,11 +1093,12 @@ function formatLinksInText(text) {
     });
 }
 
-function openDetailsModal(postId) {
+async function openDetailsModal(postId) {
     selectedPostId = postId;
     const post = memoryPosts.find(p => p.id === postId);
     if (!post) return;
 
+    // Populate modal fields
     const modalTitle = document.getElementById('detailTitle');
     const modalDesc = document.getElementById('detailDesc');
     const modalType = document.getElementById('detailType');
@@ -1089,12 +1107,7 @@ function openDetailsModal(postId) {
     const modalLocation = document.getElementById('detailLocation');
 
     if (modalTitle) modalTitle.innerText = post.title;
-    
-    // Convert links and set HTML for scrollable description (Req #1 & #3)
-    if (modalDesc) {
-        modalDesc.innerHTML = formatLinksInText(post.description);
-    }
-
+    if (modalDesc) modalDesc.innerHTML = formatLinksInText(post.description);
     if (modalType) modalType.innerText = post.type;
     if (modalImage) modalImage.src = post.image_url || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=500";
     
@@ -1107,46 +1120,26 @@ function openDetailsModal(postId) {
         modalLocation.classList.toggle('hidden', !post.location);
     }
 
-    updateHoldButtonState(postId);
+    // Check application status from Supabase
+    let status = null;
+    if (loggedInUser) {
+        const { data } = await supabaseClient
+            .from('applications')
+            .select('status')
+            .eq('post_id', postId)
+            .eq('user_id', loggedInUser.id)
+            .maybeSingle();
+        
+        if (data) status = data.status;
+    }
+
+    updateHoldButtonStateUI(status);
+
     const modal = document.getElementById('detailsModal');
     if (modal) modal.classList.remove('hidden');
 }
 
-async function submitApplication(fromHold = false) {
-    if (!loggedInUser || !selectedPostId) {
-        showToast("กรุณาเข้าสู่ระบบก่อนสมัคร");
-        return;
-    }
 
-    const post = memoryPosts.find(p => p.id === selectedPostId);
-    if (!post) return;
-
-    if (appliedPostIds.has(post.id)) {
-        showToast("คุณได้สมัครเข้าร่วมกิจกรรมนี้ไปแล้ว!");
-        return;
-    }
-
-    const { error: appError } = await supabaseClient
-        .from('applications')
-        .insert([{ post_id: selectedPostId, user_id: loggedInUser.id, status: 'pending' }]);
-
-    if (appError) {
-        showToast("สมัครไม่สำเร็จ: " + appError.message);
-        return;
-    }
-
-    const newCount = (post.joined_count || 0) + 1;
-    await supabaseClient
-        .from('posts')
-        .update({ joined_count: newCount })
-        .eq('id', selectedPostId);
-
-    appliedPostIds.add(selectedPostId);
-    updateHoldButtonState(selectedPostId);
-    showToast("ส่งใบสมัครเรียบร้อยแล้ว!");
-    closeModal('detailsModal');
-    fetchPosts();
-}
 
 function openConfirmModal() {
     showToast("คุณเป็นเจ้าของโพสต์นี้ ไม่สามารถสมัครได้");

@@ -191,7 +191,10 @@
                                 <option value="Commission">Commission $ (มีค่าตอบแทน)</option>
                                 <option value="Volunteer">Volunteer (อาสาสมัคร)</option>
                                 <option value="Meet-up">Meet-up (นัดรวมตัว)</option>
-                            </select>
+                            </select><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+</svg>
+
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                                 <i class="fa-solid fa-chevron-down text-xs"></i>
                             </div>
@@ -334,17 +337,12 @@
             <!-- Footer & Action Button -->
             <div class="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between flex-shrink-0">
                 <span class="text-sm text-gray-400 font-semibold"><i class="fa-regular fa-clock mr-1.5"></i> เปิดรับสมัครสมาชิก</span>
-                <button id="hold-btn" class="relative flex items-center justify-between w-80 h-14 px-5 bg-slate-800 text-white font-medium rounded-xl overflow-hidden shadow-lg border border-slate-700 select-none cursor-pointer active:scale-95 hover:scale-105 transition-transform">
-                    <div id="progress-fill" class="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 origin-left scale-x-0 transition-transform ease-[cubic-bezier(.3,.59,.24,.95)] duration-0"></div>
-                    <div class="relative z-10 flex items-center justify-between w-full">
-                        <span class="flex items-center gap-3">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                            </svg>
-                            <span id="hold-btn-label" class="font-semibold text-sm">กดค้างเพื่อสมัคร</span>
-                        </span>
-                    </div>
-                </button>
+                <button id="hold-btn" class="relative flex items-center justify-center w-full sm:w-80 h-14 px-6 rounded-2xl transition-all duration-300 select-none overflow-hidden font-bold text-sm tracking-wide text-center bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg shadow-orange-500/25 active:scale-95 cursor-pointer">
+            <div id="progress-fill" class="absolute inset-0 bg-emerald-600 origin-left scale-x-0 transition-transform ease-out duration-0 pointer-events-none"></div>
+            <span id="hold-btn-label" class="relative z-10 w-full text-center">
+                <span class="truncate whitespace-nowrap">กดค้างเพื่อสมัคร</span>
+            </span>
+        </button>
             </div>
         </div>
     </div>
